@@ -140,3 +140,6 @@ setopt PROMPT_SUBST
 # terminal-wakatime setup
 export PATH="$HOME/.wakatime:$PATH"
 eval "$(terminal-wakatime init)"
+
+export PATH=$PATH:/home/arjun/.spicetify
+export PATH=$PATH:$HOME/.spicetify
