@@ -5,13 +5,12 @@
 # `rice-theme set <name>`. Only the accent colour is themed; the greys and the
 # semantic rose are fixed.
 #
-# Why hyprlock and not gtklock: gtklock runs a single, blocking PAM
-# conversation, so it can only do fingerprint OR password in sequence (and only
-# once you engage the field). hyprlock runs PARALLEL auth — PAM password +
-# fprintd fingerprint at once — so you can touch the sensor OR type, both live
-# (this is what Omarchy does). hyprlock is standalone (ext-session-lock), no
-# Hyprland required; niri drives it. Lock is manual-only (Mod+L) — no idle
-# daemon (CLAUDE.md §6).
+# Why hyprlock and not gtklock: gtklock's single blocking PAM conversation only
+# engages once you focus the field, and Quickshell's WlSessionLock proved
+# unstable. hyprlock is standalone (ext-session-lock), no Hyprland required;
+# niri drives it. Password-only — this machine has no fingerprint reader, so
+# fprintd auth is not wired up. Lock is manual-only (Mod+L) — no idle daemon
+# (CLAUDE.md §6).
 
 general {
     hide_cursor = false              # visible pointer so the power row is clickable
@@ -54,7 +53,7 @@ label {
     valign = center
 }
 
-# ---- Password pill (parallel with fingerprint) -----------------------------
+# ---- Password pill ---------------------------------------------------------
 input-field {
     monitor =
     size = 340, 54
@@ -68,7 +67,7 @@ input-field {
     font_color = rgba(244, 244, 246, 1.0)
     font_family = Inter
     fade_on_empty = false
-    placeholder_text = <span foreground="##8e8e96"><i>Touch sensor or type…</i></span>
+    placeholder_text = <span foreground="##8e8e96"><i>Type to unlock…</i></span>
     check_color = @ACCENT_RGBA@       # accent — waiting on auth
     fail_color  = rgba(f43f5eff)      # semantic rose — wrong password
     fail_text = <span foreground="##f43f5e"><i>$FAIL ($ATTEMPTS)</i></span>
@@ -78,18 +77,6 @@ input-field {
     shadow_passes = 2
     shadow_size = 14
     shadow_color = rgba(0, 0, 0, 0.5)
-}
-
-# ---- Fingerprint status line (under the pill) ------------------------------
-label {
-    monitor =
-    text = $FPRINTPROMPT
-    font_family = Inter
-    font_size = 13
-    color = rgba(142, 142, 150, 1.0)
-    position = 0, -100
-    halign = center
-    valign = center
 }
 
 # ---- Power controls (clickable) --------------------------------------------
@@ -146,15 +133,10 @@ label {
     onclick = systemctl poweroff
 }
 
-# ---- Parallel auth: PAM password + fprintd fingerprint ---------------------
-# Password goes through /etc/pam.d/hyprlock (auth include login). The
-# fingerprint runs in parallel straight to fprintd over D-Bus — no PAM
-# fingerprint module needed (fprintd's verify is allow_active=yes).
+# ---- Auth: PAM password -----------------------------------------------------
+# Password goes through /etc/pam.d/hyprlock (auth include login). No fingerprint
+# auth — this machine has no reader.
 auth {
     pam:enabled = true
     pam:module = hyprlock
-    fingerprint:enabled = true
-    fingerprint:ready_message = Touch sensor or type password
-    fingerprint:present_message = Verifying…
-    fingerprint:retry_delay = 250
 }
