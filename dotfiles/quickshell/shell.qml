@@ -46,4 +46,8 @@ ShellRoot {
     // Theme picker "menu". Triggered via `qs ipc call theme toggle` (wired to
     // Mod+T in niri); Mod+Shift+T cycles directly via `rice-theme next`.
     Overlays.ThemePicker { }
+
+    // PC RGB control (fans + RAM colour/mode). Triggered via
+    // `qs ipc call rgb toggle` (wired to Mod+Shift+R in niri). Drives pc-rgb.
+    Overlays.RgbControl { }
 }

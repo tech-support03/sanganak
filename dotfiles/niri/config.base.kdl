@@ -167,6 +167,9 @@ spawn-at-startup "wl-paste" "--type" "text"  "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-at-startup "xwayland-satellite"
+// Wooting keyboard background service (analog input, profile switching, RGB
+// features). Ships as an AppImage with NO systemd unit — must be spawned here.
+spawn-at-startup "wooting-bg-service"
 // Tracks closed windows so Mod+Ctrl+T can reopen the last one (browsers
 // come back with their session via --restore-last-session).
 spawn-at-startup "reopen-window"
@@ -195,6 +198,8 @@ binds {
     // palette from 4 colours and re-themes live).
     Mod+T              { spawn "qs" "ipc" "call" "theme" "toggle"; }
     Mod+Shift+T        { spawn "rice-theme" "next"; }
+    // PC RGB control overlay (fans + RAM colour/mode) — drives pc-rgb.
+    Mod+Shift+R        { spawn "qs" "ipc" "call" "rgb" "toggle"; }
 
     Mod+Left           { focus-column-left; }
     Mod+Right          { focus-column-right; }

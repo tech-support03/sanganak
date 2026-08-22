@@ -159,11 +159,18 @@ TMP="$(mktemp)"
         [[ -f "$ESP/$initramfs" ]] || initramfs="initramfs-${flavour}-fallback.img"
         kern_hash="$(b2sum "$vmlinuz" | awk '{print $1}')"
         init_hash="$(b2sum "$ESP/$initramfs" | awk '{print $1}')"
+        # acpi_enforce_resources=lax: the B650 board's ACPI declares an OpRegion
+        # (\GSA1.SMBI) over the PIIX4 SMBus IO range, so the kernel refuses to
+        # register the SMBus adapter by default → DDR5 SPD invisible → OpenRGB
+        # can't see the RAM RGB. `lax` lets the driver claim it anyway. Boot-time
+        # param only (no runtime/modprobe equivalent), so it must live here — and
+        # it MUST stay in this generator, or a kernel-update regen drops it and
+        # the RAM RGB silently dies. See memory: project-openrgb-setup.
         cat <<E
 /Arch Linux ($flavour)
     protocol: linux
     kernel_path: boot():/$kernel#$kern_hash
-    kernel_cmdline: root=UUID=$ROOT_UUID rw quiet loglevel=3
+    kernel_cmdline: root=UUID=$ROOT_UUID rw quiet loglevel=3 acpi_enforce_resources=lax
     module_path: boot():/$initramfs#$init_hash
 
 E
