@@ -77,12 +77,23 @@ case "${1:-}" in
 --status)
     report; exit 0 ;;
 --undo)
+    # A bus rescan does NOT rebind a function that was explicitly unbound -- the
+    # device is still enumerated, just driverless. Bind it back by hand: walk the
+    # NVMe-class functions (0x0108xx) and bind any that currently have no driver.
     [ "$(id -u)" -eq 0 ] || die "run as root"
-    echo "0000:00:00.0" >/dev/null
-    for f in /sys/bus/pci/devices/*/rescan; do :; done
-    echo 1 > /sys/bus/pci/rescan 2>/dev/null
+    found=0
+    for d in /sys/bus/pci/devices/*/; do
+        case "$(cat "$d/class" 2>/dev/null)" in 0x0108*) ;; *) continue ;; esac
+        [ -e "$d/driver" ] && continue
+        addr=$(basename "$d")
+        if echo "$addr" > /sys/bus/pci/drivers/nvme/bind 2>/dev/null; then
+            echo "  ${GRN}rebound $addr${RST}"; found=1
+        else
+            echo "  ${YEL}could not rebind $addr -- reboot to restore${RST}"
+        fi
+    done
+    [ "$found" = 1 ] || echo "  no unbound NVMe functions found (nothing to undo)"
     sleep 2
-    echo "Rescanned PCI bus. (A reboot restores everything unconditionally.)"
     report; exit 0 ;;
 esac
 
