@@ -45,7 +45,7 @@ for the bars, launcher, and power flyout.
 | Login manager | ly |
 | File manager | nautilus |
 | Display profiles | kanshi + nwg-displays |
-| Fonts | Inter + JetBrainsMono Nerd Font |
+| Fonts | SF Pro (UI) + JetBrainsMono Nerd Font (mono) |
 | Icons | Papirus-Dark |
 
 No Hyprland, no waybar, no eww/ags/wofi/rofi/fuzzel. The rice is intentionally

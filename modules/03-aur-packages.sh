@@ -27,4 +27,13 @@ AUR_PKGS=(
 log "Installing AUR packages with yay (this may take a while)"
 yay -S --needed --noconfirm --sudoloop "${AUR_PKGS[@]}"
 
+# SF Pro (system UI font). Installed on its own and non-fatal: the PKGBUILD
+# pulls Apple's unversioned SF-Pro.dmg, so every time Apple refreshes it the
+# checksum breaks until the AUR maintainer bumps it. That must not take the
+# rest of the install down; fontconfig falls back to Noto Sans meanwhile and
+# `yay -S apple-fonts` can be re-run later.
+log "Installing SF Pro (apple-fonts, AUR)"
+yay -S --needed --noconfirm --sudoloop apple-fonts \
+    || warn "apple-fonts failed (likely an upstream checksum bump); UI uses Noto Sans until 'yay -S apple-fonts' succeeds"
+
 ok "AUR packages installed"

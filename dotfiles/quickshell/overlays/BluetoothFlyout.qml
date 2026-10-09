@@ -154,7 +154,7 @@ Scope {
                                       ? scope.bt.connectedName
                                       : (scope.bt.powered ? "Bluetooth on" : "Bluetooth off")
                                 color: "#f4f4f6"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
@@ -167,7 +167,7 @@ Scope {
                                          ? "Connected"
                                          : (scope.bt.powered ? "Select a device below" : "Turn on to connect"))
                                 color: "#8e8e96"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 11
                             }
                         }
@@ -185,7 +185,7 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Bluetooth"
                             color: "#c9c9d0"
-                            font.family: "Inter"
+                            font.family: Theme.fontSans
                             font.pixelSize: 13
                         }
 
@@ -249,7 +249,7 @@ Scope {
                         visible: scope.statusMsg.length > 0
                         text: scope.statusMsg
                         color: "#e8b475"
-                        font.family: "Inter"
+                        font.family: Theme.fontSans
                         font.pixelSize: 11
                         wrapMode: Text.WordWrap
                         elide: Text.ElideRight
@@ -305,7 +305,7 @@ Scope {
                                             width: parent.width
                                             text: row.modelData.name
                                             color: "#f4f4f6"
-                                            font.family: "Inter"
+                                            font.family: Theme.fontSans
                                             font.pixelSize: 13
                                             font.weight: row.modelData.connected ? Font.DemiBold : Font.Normal
                                             elide: Text.ElideRight
@@ -315,7 +315,7 @@ Scope {
                                             text: row.modelData.connected ? "Connected"
                                                   : (row.modelData.paired ? "Paired" : "")
                                             color: "#8e8e96"
-                                            font.family: "Inter"
+                                            font.family: Theme.fontSans
                                             font.pixelSize: 10
                                         }
                                     }
@@ -383,7 +383,7 @@ Scope {
                                 topPadding: 18; bottomPadding: 18
                                 text: scope.bt.scanning ? "Scanning…" : "No devices found"
                                 color: "#8e8e96"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 12
                             }
                         }
@@ -413,7 +413,7 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Advanced settings (Blueman)"
                             color: "#c9c9d0"
-                            font.family: "Inter"
+                            font.family: Theme.fontSans
                             font.pixelSize: 13
                         }
                         HoverHandler { id: advHover }

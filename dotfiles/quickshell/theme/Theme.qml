@@ -71,7 +71,7 @@ QtObject {
     readonly property var  easeOut:  [0.2, 0.85, 0.25, 1.0]
 
     // --- fonts -------------------------------------------------------------
-    readonly property string fontSans: "Inter"
+    readonly property string fontSans: "SF Pro Text"   // apple-fonts (AUR); fontconfig falls back to Noto Sans
     readonly property string fontMono: "JetBrainsMono Nerd Font"
 
     // --- live palette file (mirrors services/Profile.qml) ------------------

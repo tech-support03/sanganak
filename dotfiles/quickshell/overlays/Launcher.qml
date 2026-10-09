@@ -202,7 +202,7 @@ Scope {
                     color: "#f4f4f6"
                     placeholderText: "Search"
                     placeholderTextColor: "#8e8e96"
-                    font.family: "Inter"
+                    font.family: Theme.fontSans
                     font.pixelSize: 16
                     verticalAlignment: TextInput.AlignVCenter
                     selectByMouse: true
@@ -313,7 +313,7 @@ Scope {
                                     ? tile.modelData.name.charAt(0).toUpperCase()
                                     : "?"
                                 color: "#e7e1ff"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 36
                                 font.weight: Font.DemiBold
                             }
@@ -341,7 +341,7 @@ Scope {
                         horizontalAlignment: Text.AlignHCenter
                         text: tile.modelData ? tile.modelData.name : ""
                         color: tile.selected ? "#ffffff" : "#f4f4f6"
-                        font.family: "Inter"
+                        font.family: Theme.fontSans
                         font.pixelSize: 12
                         elide: Text.ElideRight
                         maximumLineCount: 2
@@ -358,7 +358,7 @@ Scope {
                 visible: scope.results.length === 0
                 text: scope.query.length > 0 ? "No results" : "No apps found"
                 color: "#8e8e96"
-                font.family: "Inter"
+                font.family: Theme.fontSans
                 font.pixelSize: 14
             }
         }

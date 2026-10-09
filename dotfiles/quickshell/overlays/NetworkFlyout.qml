@@ -171,7 +171,7 @@ Scope {
                                       ? scope.net.primaryName
                                       : (scope.net.wifiEnabled ? "Not connected" : "Wi-Fi off")
                                 color: "#f4f4f6"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
@@ -184,7 +184,7 @@ Scope {
                                          : "Wi-Fi · " + scope.net.wifiSignal + "%")
                                       : "Select a network below"
                                 color: "#8e8e96"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 11
                             }
                         }
@@ -202,7 +202,7 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Wi-Fi"
                             color: "#c9c9d0"
-                            font.family: "Inter"
+                            font.family: Theme.fontSans
                             font.pixelSize: 13
                         }
 
@@ -271,7 +271,7 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Ethernet"
                             color: "#c9c9d0"
-                            font.family: "Inter"
+                            font.family: Theme.fontSans
                             font.pixelSize: 13
                         }
                         Text {
@@ -283,7 +283,7 @@ Scope {
                                   : scope.net.ethernetPlugged ? "Connecting…"
                                   : "No cable"
                             color: scope.net.ethernetUp ? Theme.blue : "#8e8e96"
-                            font.family: "Inter"
+                            font.family: Theme.fontSans
                             font.pixelSize: 11
                         }
 
@@ -318,7 +318,7 @@ Scope {
                         visible: scope.statusMsg.length > 0
                         text: scope.statusMsg
                         color: "#e8b475"
-                        font.family: "Inter"
+                        font.family: Theme.fontSans
                         font.pixelSize: 11
                         wrapMode: Text.WordWrap
                         elide: Text.ElideRight
@@ -373,7 +373,7 @@ Scope {
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: row.modelData.ssid
                                             color: "#f4f4f6"
-                                            font.family: "Inter"
+                                            font.family: Theme.fontSans
                                             font.pixelSize: 13
                                             font.weight: row.modelData.active ? Font.DemiBold : Font.Normal
                                             elide: Text.ElideRight
@@ -431,7 +431,7 @@ Scope {
                                                 anchors.rightMargin: 8
                                                 anchors.verticalCenter: parent.verticalCenter
                                                 color: "#f4f4f6"
-                                                font.family: "Inter"
+                                                font.family: Theme.fontSans
                                                 font.pixelSize: 13
                                                 echoMode: TextInput.Password
                                                 clip: true
@@ -484,7 +484,7 @@ Scope {
                                 topPadding: 18; bottomPadding: 18
                                 text: scope.net.scanning ? "Scanning…" : "No networks found"
                                 color: "#8e8e96"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 12
                             }
                         }
@@ -514,7 +514,7 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Advanced settings (iwctl)"
                             color: "#c9c9d0"
-                            font.family: "Inter"
+                            font.family: Theme.fontSans
                             font.pixelSize: 13
                         }
                         HoverHandler { id: advHover }

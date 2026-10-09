@@ -173,7 +173,7 @@ Scope {
                                 anchors.leftMargin: 14
                                 text: row.modelData.label
                                 color: row.dangerous ? "#e87575" : "#f4f4f6"
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 14
                             }
 

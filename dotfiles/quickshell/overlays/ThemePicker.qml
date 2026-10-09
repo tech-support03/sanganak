@@ -125,7 +125,7 @@ Scope {
                     Text {
                         text: "Themes"
                         color: Theme.fg2
-                        font.family: "Inter"
+                        font.family: Theme.fontSans
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                         bottomPadding: 6
@@ -167,7 +167,7 @@ Scope {
                                 anchors.leftMargin: 12
                                 text: row.modelData.name
                                 color: row.isActive ? Theme.fg0 : Theme.fg1
-                                font.family: "Inter"
+                                font.family: Theme.fontSans
                                 font.pixelSize: 14
                             }
 

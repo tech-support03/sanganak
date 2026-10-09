@@ -7,7 +7,7 @@ anchor=top-right
 default-timeout=5000
 ignore-timeout=0
 
-font=Inter 11
+font=SF Pro Text, Noto Sans, Noto Sans Devanagari 11
 background-color=#12131ad9
 text-color=#f5f6faff
 border-color=#00000000

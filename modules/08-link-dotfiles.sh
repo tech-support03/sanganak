@@ -65,6 +65,7 @@ link "$DOTFILES_DIR/nvim"                        "$HOME/.config/nvim"
 # is wired up here; packages come from 01-base-packages.sh and the login shell
 # is switched to zsh in install.sh.
 link "$DOTFILES_DIR/zsh/.zshrc"                 "$HOME/.zshrc"
+link "$DOTFILES_DIR/fontconfig/fonts.conf"      "$HOME/.config/fontconfig/fonts.conf"
 link "$DOTFILES_DIR/gtk-3.0/settings.ini"       "$HOME/.config/gtk-3.0/settings.ini"
 link "$DOTFILES_DIR/gtk-4.0/settings.ini"       "$HOME/.config/gtk-4.0/settings.ini"
 link "$DOTFILES_DIR/mako/config"                "$HOME/.config/mako/config"
@@ -88,6 +89,24 @@ link "$DOTFILES_DIR/rice/templates"              "$HOME/.config/rice/templates"
 mkdir -p "$HOME/.config/rice/themes"
 cp -n "$DOTFILES_DIR"/rice/themes/*.theme        "$HOME/.config/rice/themes/" 2>/dev/null || true
 ok "seeded rice themes + templates"
+
+# System font = SF Pro. fonts.conf (linked above) covers every fontconfig app;
+# GTK4/libadwaita apps behind xdg-desktop-portal-gnome read the gsettings key
+# instead of settings.ini, so set it too. dbus-run-session gives gsettings a bus
+# to reach dconf during a non-graphical install. Non-fatal: fontconfig still
+# applies if this fails.
+fc-cache -f >/dev/null 2>&1 || warn "fc-cache failed; fonts refresh at next login"
+if command -v gsettings >/dev/null 2>&1; then
+    dbus-run-session sh -c '
+        gsettings set org.gnome.desktop.interface font-name           "SF Pro Text 11" &&
+        gsettings set org.gnome.desktop.interface document-font-name  "SF Pro Text 11" &&
+        gsettings set org.gnome.desktop.interface monospace-font-name "JetBrainsMono Nerd Font 11"
+    ' >/dev/null 2>&1 && ok "gsettings fonts set (SF Pro Text / JetBrains Mono)" \
+        || warn "gsettings font keys not set; GTK falls back to settings.ini"
+fi
+fc-match -f '%{family[0]}\n' sans-serif | grep -q '^SF Pro' \
+    && ok "sans-serif resolves to SF Pro" \
+    || warn "SF Pro not installed (apple-fonts); UI text falls back to Noto Sans"
 
 # Scripts → both ~/.local/bin (interactive shell) AND /usr/local/bin (every
 # PAM/systemd session). niri's spawn-at-startup uses bare names like
