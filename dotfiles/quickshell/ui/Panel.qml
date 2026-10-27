@@ -49,7 +49,10 @@ PanelWindow {
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "sanganak-panel"
-    WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    // Exclusive while open: a panel summoned by a keybind has to take typing
+    // and Escape at once (OnDemand only focuses after a click on it). A click
+    // outside closes the panel, which hands the keyboard straight back.
+    WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     // Everything but the bar strip takes input: outside the card it closes.
     mask: Region {
