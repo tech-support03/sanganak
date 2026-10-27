@@ -104,9 +104,26 @@ output "LVDS-1" {
 //  Window rules — borderless, rounded. (Per-app translucency rules that DIFFER
 //  by profile live in the profile fragment, not here.)
 // =============================================================================
+// One radius system-wide (24): windows, the bar's screen corners, panels.
 window-rule {
-    geometry-corner-radius 14
+    geometry-corner-radius 24
     clip-to-geometry true
+}
+
+// The shell's terminal tools — package install / remove, keybindings
+// (sanganak.float), the update + Finish setup runs (sanganak.update), btop
+// from the system monitor (sanganak.btop) — float centred instead of tiling.
+window-rule {
+    match app-id="^sanganak\\.(float|btop)$"
+    open-floating true
+    default-column-width { fixed 1100; }
+    default-window-height { fixed 720; }
+}
+window-rule {
+    match app-id="^sanganak\\.update$"
+    open-floating true
+    default-column-width { fixed 960; }
+    default-window-height { fixed 640; }
 }
 
 // Games run through gamescope (`gamescope -- %command%`). gamescope nests its
@@ -130,14 +147,10 @@ window-rule {
     opacity 1.0
 }
 
-// Side bar / top bar — never give them focus rings or shadows.
+// The bars (edge band, its corners, the media notch) and their panels draw
+// their own black bezel — never give them shadows.
 layer-rule {
-    match namespace="^quickshell-sidebar$"
-    place-within-backdrop false
-    shadow { off; }
-}
-layer-rule {
-    match namespace="^quickshell-topbar$"
+    match namespace="^sanganak-"
     place-within-backdrop false
     shadow { off; }
 }
@@ -160,7 +173,7 @@ layer-rule {
 // quickshell starts, so the MacBook's GRUB entry comes up light automatically.
 spawn-at-startup "rice-profile-seed"
 spawn-at-startup "wallpaper-init"
-// Both bars are Quickshell (top-bar dashboard + left side-bar with system monitor).
+// Both bars are Quickshell (right-edge bezel bar + top media notch).
 spawn-at-startup "quickshell"
 spawn-at-startup "mako"
 spawn-at-startup "wl-paste" "--type" "text"  "--watch" "cliphist" "store"
@@ -173,6 +186,9 @@ spawn-at-startup "wooting-bg-service"
 // Tracks closed windows so Mod+Ctrl+T can reopen the last one (browsers
 // come back with their session via --restore-last-session).
 spawn-at-startup "reopen-window"
+// First login after an ISO install: opens Finish setup (apps, gaming, AUR,
+// full update) in a floating terminal. Exits at once when setup is done.
+spawn-at-startup "sanganak-finish-setup" "--auto"
 // No idle daemon: the system stays awake and unlocked until the user
 // acts. Lock is manual only (Mod+L → hyprlock). Suspend/poweroff are
 // manual only (Quickshell power flyout). swayidle is intentionally not
@@ -182,24 +198,28 @@ spawn-at-startup "reopen-window"
 //  Keybindings — macOS/ChromeOS-flavored.
 // =============================================================================
 binds {
-    Mod+Return         { spawn "alacritty"; }
-    Mod+Space          { spawn "qs" "ipc" "call" "launcher" "toggle"; }
+    Mod+Return         hotkey-overlay-title="Terminal" { spawn "alacritty"; }
+    Mod+Space          hotkey-overlay-title="App launcher" { spawn "qs" "ipc" "call" "launcher" "toggle"; }
+    // The sanganak menu (packages, updates, keybindings, theme, system).
+    Mod+Alt+Space      hotkey-overlay-title="sanganak menu" { spawn "qs" "ipc" "call" "panel" "toggle" "menu"; }
+    // Searchable list of these binds, read from the live config.
+    Mod+K              hotkey-overlay-title="Keybindings" { spawn "sanganak-keybindings"; }
     Mod+W              { close-window; }
     // Reopen the last closed window (Chrome's Ctrl+Shift+T, system-wide).
     // Browsers restore their session; other apps relaunch fresh.
-    Mod+Ctrl+T         { spawn "reopen-window" "pop"; }
-    Mod+L              { spawn "sh" "-c" "pgrep -x hyprlock || hyprlock"; }
-    Mod+Escape         { spawn "qs" "ipc" "call" "power" "toggle"; }
-    Mod+Shift+B        { spawn "/home/arjun/.local/bin/wallpaper-next"; }
+    Mod+Ctrl+T         hotkey-overlay-title="Reopen last closed window" { spawn "reopen-window" "pop"; }
+    Mod+L              hotkey-overlay-title="Lock screen" { spawn "sh" "-c" "pgrep -x hyprlock || hyprlock"; }
+    Mod+Escape         hotkey-overlay-title="Power menu" { spawn "qs" "ipc" "call" "power" "toggle"; }
+    Mod+Shift+B        hotkey-overlay-title="Next wallpaper" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper-next"; }
     // Toggle the light/full visual profile (cava, shadows, translucency, anims).
-    Mod+Shift+P        { spawn "rice-profile" "toggle"; }
+    Mod+Shift+P        hotkey-overlay-title="Toggle full / light profile" { spawn "rice-profile" "toggle"; }
     // Theme switcher: Mod+T opens the Quickshell picker "menu"; Mod+Shift+T
     // cycles to the next saved theme directly (rice-theme derives the whole
     // palette from 4 colours and re-themes live).
-    Mod+T              { spawn "qs" "ipc" "call" "theme" "toggle"; }
-    Mod+Shift+T        { spawn "rice-theme" "next"; }
+    Mod+T              hotkey-overlay-title="Theme picker" { spawn "qs" "ipc" "call" "theme" "toggle"; }
+    Mod+Shift+T        hotkey-overlay-title="Next theme" { spawn "rice-theme" "next"; }
     // PC RGB control overlay (fans + RAM colour/mode) — drives pc-rgb.
-    Mod+Shift+R        { spawn "qs" "ipc" "call" "rgb" "toggle"; }
+    Mod+Shift+R        hotkey-overlay-title="RGB lighting" { spawn "qs" "ipc" "call" "rgb" "toggle"; }
 
     Mod+Left           { focus-column-left; }
     Mod+Right          { focus-column-right; }
@@ -232,16 +252,16 @@ binds {
     // wpctl runs first (so volume works even if Quickshell is down), then we
     // poke the VolumeOSD overlay to pop the on-screen readout. Capped at 100%
     // to match the sidebar scroll behavior.
-    XF86AudioRaiseVolume  allow-when-locked=true { spawn "sh" "-c" "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 2%+ && qs ipc call audio show"; }
-    XF86AudioLowerVolume  allow-when-locked=true { spawn "sh" "-c" "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%- && qs ipc call audio show"; }
-    XF86AudioMute         allow-when-locked=true { spawn "sh" "-c" "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && qs ipc call audio show"; }
-    XF86AudioPlay         allow-when-locked=true { spawn "playerctl" "play-pause"; }
-    XF86AudioNext         allow-when-locked=true { spawn "playerctl" "next"; }
-    XF86AudioPrev         allow-when-locked=true { spawn "playerctl" "previous"; }
-    XF86MonBrightnessUp   { spawn "brightnessctl" "set" "+5%"; }
-    XF86MonBrightnessDown { spawn "brightnessctl" "set" "5%-"; }
+    XF86AudioRaiseVolume  allow-when-locked=true hotkey-overlay-title="Volume up" { spawn "sh" "-c" "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 2%+ && qs ipc call audio show"; }
+    XF86AudioLowerVolume  allow-when-locked=true hotkey-overlay-title="Volume down" { spawn "sh" "-c" "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%- && qs ipc call audio show"; }
+    XF86AudioMute         allow-when-locked=true hotkey-overlay-title="Mute" { spawn "sh" "-c" "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && qs ipc call audio show"; }
+    XF86AudioPlay         allow-when-locked=true hotkey-overlay-title="Play / pause" { spawn "playerctl" "play-pause"; }
+    XF86AudioNext         allow-when-locked=true hotkey-overlay-title="Next track" { spawn "playerctl" "next"; }
+    XF86AudioPrev         allow-when-locked=true hotkey-overlay-title="Previous track" { spawn "playerctl" "previous"; }
+    XF86MonBrightnessUp   hotkey-overlay-title="Brightness up" { spawn "brightnessctl" "set" "+5%"; }
+    XF86MonBrightnessDown hotkey-overlay-title="Brightness down" { spawn "brightnessctl" "set" "5%-"; }
 
-    Print              { screenshot; }
+    Print              hotkey-overlay-title="Screenshot" { screenshot; }
 }
 
 environment {

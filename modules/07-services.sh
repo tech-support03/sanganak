@@ -2,9 +2,17 @@
 # 07-services.sh — enable system + user services. Idempotent.
 set -Eeuo pipefail
 
-log "Setting timezone"
-sudo timedatectl set-timezone America/Los_Angeles
-sudo timedatectl set-ntp true
+# In the ISO's chroot (SANGANAK_CHROOT=1) nothing is running: the timezone
+# was set by 04-chroot-config, and services are enabled without --now.
+NOW="--now"
+if [[ -n "${SANGANAK_CHROOT:-}" ]]; then
+    NOW=""
+    sudo systemctl enable systemd-timesyncd.service
+else
+    log "Setting timezone"
+    sudo timedatectl set-timezone "${TIMEZONE:-America/Los_Angeles}"
+    sudo timedatectl set-ntp true
+fi
 
 # ---- networking: iwd (wifi) + systemd-networkd (wired) ---------------------
 # No NetworkManager — it fought iwd on this hardware. iwd runs standalone and
@@ -71,10 +79,10 @@ if [[ ! -s /etc/resolv.conf ]]; then
 fi
 
 log "Enabling system services"
-sudo systemctl enable --now iwd.service
-sudo systemctl enable --now systemd-networkd.service
-sudo systemctl enable --now bluetooth.service
-sudo systemctl enable --now seatd.service
+sudo systemctl enable $NOW iwd.service
+sudo systemctl enable $NOW systemd-networkd.service
+sudo systemctl enable $NOW bluetooth.service
+sudo systemctl enable $NOW seatd.service
 sudo usermod -aG seat,video,input,audio,wheel "$USER" || true
 
 log "Enabling ly login manager"
@@ -85,18 +93,18 @@ sudo systemctl enable ly@tty1.service
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 sudo "$REPO_ROOT/scripts/theme-ly.sh" || log "ly theming skipped (run later: sudo scripts/theme-ly.sh)"
 
-# Hypervisor guest agents — harmless on bare metal because the service files
-# only exist if the matching package was installed.
-for unit in vmtoolsd.service vmware-vmblock-fuse.service \
-            qemu-guest-agent.service spice-vdagent.service \
-            vboxservice.service; do
+# Hypervisor guest agent for the hypervisor we're running under (none on
+# bare metal); all of them are installed from desktop.txt.
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+for unit in $(vm_guest_units); do
     sudo systemctl enable "$unit" 2>/dev/null || true
 done
 
 log "Enabling user services"
-systemctl --user daemon-reload
-for unit in pipewire pipewire-pulse wireplumber; do
-    systemctl --user enable --now "${unit}.service" 2>/dev/null || true
+# pipewire / wireplumber are socket- or preset-activated per user; enabling
+# globally covers the chroot, where there is no user manager to talk to.
+for unit in pipewire.socket pipewire-pulse.socket wireplumber.service; do
+    sudo systemctl --global enable "$unit" 2>/dev/null || true
 done
 
 ok "services enabled"

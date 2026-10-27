@@ -1,0 +1,11 @@
+# Apps + extras — installed by sanganak-finish-setup on first login (online).
+
+# apps
+chromium discord nautilus nwg-displays
+# media / tools
+cava imagemagick mesa-demos wf-recorder ddcutil fwupd openrgb
+noto-fonts-cjk ttf-firacode-nerd python-pip
+# gaming (multilib) — steam + the gamescope / gamemode / mangohud stack and
+# 32-bit Vulkan drivers so Proton games get real GPU acceleration
+steam gamescope gamemode lib32-gamemode mangohud lib32-mangohud
+lib32-mesa lib32-vulkan-radeon lib32-vulkan-intel

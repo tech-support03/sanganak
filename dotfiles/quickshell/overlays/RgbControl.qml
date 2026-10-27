@@ -4,11 +4,10 @@
 // overlay idiom as ThemePicker/PowerFlyout: full-screen Overlay layer, dim
 // backdrop, click-outside / Escape closes, exclusive keyboard focus.
 //
-// This is a thin, intuitive UI over `~/.local/bin/pc-rgb` — the hardened engine
-// that resolves RAM + motherboard-fan devices BY NAME and persists the choice to
-// ~/.config/OpenRGB/pc-rgb.conf (re-applied at login by openrgb.service). Because
-// everything routes through pc-rgb, the PC-only guarantee holds: the Wooting is
-// disabled in OpenRGB.json and never touched here. Colours chosen here are RAW
+// This is a thin UI over `pc-rgb` (scripts/pc-rgb.sh), which remembers the
+// choice in ~/.config/OpenRGB/pc-rgb.conf and applies it through `rgb-apply`
+// (RAM + motherboard ARGB headers only, persisted for boot and resume by the
+// rgb-color units — modules/11-board-quirks.sh). Colours chosen here are RAW
 // HARDWARE colours (your fans/RAM), independent of the rice Theme palette — so
 // the swatches are literal, NOT Theme tokens. Only the panel chrome uses Theme.
 //
@@ -62,7 +61,7 @@ Scope {
                 : scope.selMode === "off"     ? "off"
                 : scope.selMode + " " + scope.hex6(scope.selColor)
         Quickshell.execDetached(["sh", "-c",
-            "\"$HOME/.local/bin/pc-rgb\" " + cmd + " 2>>\"$HOME/.cache/qs-rgb.log\""])
+            "pc-rgb " + cmd + " 2>>\"$HOME/.cache/qs-rgb.log\""])
     }
     function setMode(m)     { scope.selMode = m; scope.applyNow() }
     function commitColor()  { if (!scope.colorMode) scope.selMode = "static"; scope.applyNow() }

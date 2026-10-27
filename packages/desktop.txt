@@ -1,0 +1,26 @@
+# Core desktop — everything needed to log in to a working sanganak desktop
+# with no network. Bundled on the ISO's offline repo.
+
+# build + basics
+base-devel git curl wget unzip rsync man-db man-pages openssh
+# network / audio / bluetooth
+iwd
+pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol
+bluez bluez-utils blueman
+# session
+niri xwayland-satellite xorg-xwayland seatd ly polkit polkit-gnome
+xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome xdg-desktop-portal-wlr
+xdg-user-dirs xdg-utils qt5-wayland qt6-wayland kanshi
+quickshell hyprlock mako swaybg wl-clipboard cliphist brightnessctl playerctl
+# graphics: mesa + Vulkan for AMD and Intel; swrast keeps VMs without 3D working
+mesa vulkan-icd-loader vulkan-radeon vulkan-intel vulkan-swrast
+# terminal + shell
+alacritty zsh zsh-completions zsh-autosuggestions zsh-syntax-highlighting
+neovim fastfetch htop btop fzf ripgrep fd bat eza zoxide jq gum pacman-contrib
+# look
+ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji papirus-icon-theme adw-gtk-theme
+gtk3 gtk4 libadwaita
+# scripts (rice-theme, sanganak-logo, keybindings, agent usage)
+python python-gobject
+# VM guests — the installer enables only the one that matches the hypervisor
+qemu-guest-agent spice-vdagent open-vm-tools virtualbox-guest-utils

@@ -74,7 +74,7 @@ window-rule {
     match app-id="fastfetch-popup"
     open-floating true
     opacity 1.0
-    geometry-corner-radius 18
+    geometry-corner-radius 24
 }
 window-rule {
     match app-id="org.gnome.Calculator"

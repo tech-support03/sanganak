@@ -1,0 +1,2 @@
+# AUR packages prebuilt into the ISO's offline repo.
+yay-bin

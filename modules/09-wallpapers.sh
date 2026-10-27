@@ -6,6 +6,18 @@ WP_DIR="$HOME/Pictures/Wallpapers"
 mkdir -p "$WP_DIR"
 
 # Five diverse high-quality samples (CC0 / unsplash-hosted; download once, idempotent).
+# The ISO ships the user's wallpapers (WALLPAPER_SRC); copy those and skip the
+# download, which needs network the chroot doesn't have.
+if [[ -n "${WALLPAPER_SRC:-}" && -d "$WALLPAPER_SRC" ]]; then
+    find "$WALLPAPER_SRC" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+        -exec cp -n {} "$WP_DIR/" \;
+    ok "wallpapers copied from $WALLPAPER_SRC"
+fi
+if [[ -n "${SANGANAK_CHROOT:-}" ]]; then
+    install -Dm755 "$SCRIPTS_DIR/wallpaper-init.sh" "$HOME/.local/bin/wallpaper-init"
+    exit 0
+fi
+
 declare -A WALLS=(
     [01-dark-mountain.jpg]="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=3840&q=90"
     [02-deep-purple-nebula.jpg]="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=3840&q=90"

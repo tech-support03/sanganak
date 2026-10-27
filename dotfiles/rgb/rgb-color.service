@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply the remembered PC RGB colour (RAM + ARGB fans)
+# OpenRGB needs the PIIX4 SMBus adapter, which only exists with
+# acpi_enforce_resources=lax on this board (see modules/11-board-quirks.sh).
+After=systemd-modules-load.service
+ConditionPathExists=/usr/bin/openrgb
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rgb-apply
+
+[Install]
+WantedBy=multi-user.target

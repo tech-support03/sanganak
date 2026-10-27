@@ -125,6 +125,8 @@ run_mod 03-aur-packages.sh
 run_mod 04-niri-stack.sh
 run_mod 00-display-config.sh
 run_mod 07-services.sh
+# Board quirks write /etc and enable system units, so they run as root.
+log "module → 11-board-quirks.sh"; sudo bash "$MODULES_DIR/11-board-quirks.sh"; ok "module → 11-board-quirks.sh"
 run_mod 08-link-dotfiles.sh
 run_mod 09-wallpapers.sh
 
@@ -146,7 +148,12 @@ else
     ok "login shell already zsh"
 fi
 
+# This path installed apps + AUR itself, so first login has nothing left to
+# finish: mark it done so sanganak-finish-setup --auto stays quiet.
+mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/sanganak"
+touch "${XDG_STATE_HOME:-$HOME/.local/state}/sanganak/setup-done"
+
 c_green ""
 c_green "═══════════════════════════════════════════════════════════"
-c_green "  Setup complete. Reboot, then select 'Niri' at greetd/tty."
+c_green "  Setup complete. Reboot, then pick 'Niri' at the ly login."
 c_green "═══════════════════════════════════════════════════════════"

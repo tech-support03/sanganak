@@ -123,9 +123,13 @@ for s in "$SCRIPTS_DIR"/*.sh; do
     ok "installed script: ${name%.sh}"
 done
 # Logo renderer (Python, stdlib only) — rice-theme calls it for the lock screen.
-install -m755 "$SCRIPTS_DIR/sanganak-logo.py" "$HOME/.local/bin/sanganak-logo"
-sudo install -m755 "$SCRIPTS_DIR/sanganak-logo.py" "/usr/local/bin/sanganak-logo"
-ok "installed script: sanganak-logo"
+# Python tools (sanganak-logo, sanganak-keybindings, sanganak-agent-usage).
+for s in "$SCRIPTS_DIR"/*.py; do
+    name="$(basename "$s" .py)"
+    install -m755 "$s" "$HOME/.local/bin/$name"
+    sudo install -m755 "$s" "/usr/local/bin/$name"
+    ok "installed script: $name"
+done
 
 # Generate the initial niri config.kdl now that rice-profile is on PATH. Seed
 # from the kernel cmdline (rice.profile=) if present, else honour any saved

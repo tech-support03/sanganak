@@ -1,0 +1,11 @@
+[Unit]
+Description=Re-apply the PC RGB colour after suspend
+After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+ConditionPathExists=/usr/bin/openrgb
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rgb-apply
+
+[Install]
+WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target

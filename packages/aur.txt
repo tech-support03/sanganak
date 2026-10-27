@@ -1,0 +1,6 @@
+# AUR — built by sanganak-finish-setup on first login (online).
+spotify
+wooting-bg-service
+# SF Pro: Apple's unversioned download breaks the checksum whenever Apple
+# updates it, so this one is allowed to fail (UI falls back to Noto Sans).
+apple-fonts

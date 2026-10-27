@@ -38,7 +38,10 @@ Restart=on-failure
 WantedBy=graphical-session.target
 EOF
 
-systemctl --user daemon-reload
-systemctl --user enable kanshi.service >/dev/null 2>&1 || true
+# Enabled with a plain wants-symlink rather than `systemctl --user enable`,
+# which needs a running user manager — there is none inside the ISO's chroot.
+mkdir -p "$HOME/.config/systemd/user/graphical-session.target.wants"
+ln -sf ../kanshi.service "$HOME/.config/systemd/user/graphical-session.target.wants/kanshi.service"
+systemctl --user daemon-reload >/dev/null 2>&1 || true
 
 ok "display configuration applied for profile=$PROFILE"
