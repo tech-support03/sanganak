@@ -66,6 +66,33 @@ def polyline(pts, width):
     return (min(xs) - h, min(ys) - h, max(xs) + h, max(ys) + h), inside
 
 
+RIDGE = [(24, 67.7), (37, 47.6), (45.3, 57.1), (57.1, 38.2), (67.7, 54.7), (76, 45.3)]
+
+
+def pixel_line(n, pts):
+    """8-connected 1-px Bresenham polyline through RIDGE on an n×n grid. A
+    supersampled stroke is either too fat or breaks up at console resolution;
+    this stays one clean pixel wide and never touches the sun."""
+    def px(p):
+        return (min(n - 1, int(p[0] * n / 100)), min(n - 1, int(p[1] * n / 100)))
+    cells = []
+    for a, b in zip(pts, pts[1:]):
+        (x0, y0), (x1, y1) = px(a), px(b)
+        dx, dy = abs(x1 - x0), -abs(y1 - y0)
+        sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
+        err = dx + dy
+        while True:
+            cells.append((x0, y0))
+            if (x0, y0) == (x1, y1):
+                break
+            e2 = 2 * err
+            if e2 >= dy:
+                err += dy; x0 += sx
+            if e2 <= dx:
+                err += dx; y0 += sy
+    return cells
+
+
 def layers(c1, c2, c3, base, tty):
     """Back-to-front (shape, colour). tty=True thickens hairlines for the
     coarse console grid and raises the body off the (identical) ly background."""
@@ -81,8 +108,8 @@ def layers(c1, c2, c3, base, tty):
     out.append((ring(15, 15, 70, 70, 14, 3.2 if tty else 1.2), mix(blk, fog, 0.22)))
     # tty: centre the sun on a pixel centre of the 32-px grid so it stays round
     out.append((circle(39.06, 35.94, 7.0) if tty else circle(38.2, 35, 6.5), acc))
-    ridge = [(24, 67.7), (37, 47.6), (45.3, 57.1), (57.1, 38.2), (67.7, 54.7), (76, 45.3)]
-    out.append((polyline(ridge, 6.2 if tty else 4.7), fog))
+    if not tty:                   # tty draws the ridge as a 1-px pixel line instead
+        out.append((polyline(RIDGE, 4.7), fog))
     out.append((rrect(24, 71.5, 52, 4.6 if tty else 3.6, 1.8), grn))
     return out
 
@@ -156,7 +183,12 @@ def write_dur(path, n, c1, c2, c3, base):
     buf, m = rasterize(n, ss, layers(c1, c2, c3, base, tty=True))
     bg = rgb(base)
 
+    ridge = set(pixel_line(n, RIDGE))
+    fog = rgb(c2)
+
     def pixel(x, y):              # majority colour of the pixel's samples
+        if (x, y) in ridge:
+            return fog
         counts = {}
         for sy in range(ss):
             row = (y * ss + sy) * m + x * ss
