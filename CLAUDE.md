@@ -19,9 +19,12 @@ expected). Match it precisely.
 - **Every interactive surface must animate** (hover, click, expand,
   open/close, focus change). Default duration 180–320ms, ease
   `cubic-bezier(.2,.85,.25,1)`. No instant state changes.
-- **Translucent surfaces** on every system piece: bar, sidebar, lock
-  screen, terminal, notifications, launcher, quick settings,
-  power flyout. Background alpha ~0.32, blur 28–32px, saturation 1.4.
+- **Translucent surfaces** on every system piece: lock screen, terminal,
+  notifications, launcher, power flyout. Background alpha ~0.32, blur
+  28–32px, saturation 1.4. **Exception (user's call, 2026-10-27):** the edge
+  bar, the media notch and the bar's panels are solid bezel black (`#000`) —
+  they read as part of the monitor edge, carried over from the user's Omarchy
+  setup.
 - **Minimum packages.** If a feature can be done by an existing
   service, don't add another. List below is curated — don't expand it
   without asking.
@@ -67,36 +70,19 @@ expected). Match it precisely.
 
 ## 2. Packages
 
-Authoritative lists live in `modules/01-base-packages.sh` and
-`modules/03-aur-packages.sh`; the summary below is for orientation.
+Authoritative lists live in **`packages/`** (see `packages/README.md`), shared
+by every install path:
 
-### pacman
-```
-niri alacritty quickshell hyprlock fprintd mako swaybg cava
-pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol
-iwd bluez bluez-utils blueman
-xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk
-xdg-user-dirs polkit-gnome wl-clipboard cliphist
-nautilus chromium discord
-ly seatd
-zsh zsh-completions zsh-autosuggestions zsh-syntax-highlighting
-ttf-jetbrains-mono-nerd ttf-firacode-nerd noto-fonts noto-fonts-emoji
-papirus-icon-theme adw-gtk-theme
-qt5-wayland qt6-wayland
-brightnessctl playerctl
-```
+| List | What | Installed by |
+|---|---|---|
+| `desktop.txt` | core session: niri, quickshell, hyprlock, ly, mesa + Vulkan (radeon / intel / swrast), pipewire, iwd, bluez, fonts, zsh, gum/fzf, VM guest tools | ISO pacstrap (offline) · `install.sh` module 01 |
+| `aur-offline.txt` | `yay-bin`, prebuilt into the ISO | ISO · module 02 |
+| `apps.txt` | chromium, discord, nautilus, nwg-displays, cava, openrgb, ddcutil, … + gaming: steam, gamescope, gamemode, mangohud, lib32 Vulkan | `sanganak-finish-setup` · module 01 |
+| `aur.txt` | spotify, wooting-bg-service, apple-fonts (non-fatal) | `sanganak-finish-setup` · module 03 |
 
-### AUR (yay)
-```
-niri                     # compositor (also in extra; pin to AUR if preferred)
-nwg-displays             # visual display arranger
-kanshi                   # auto-applies display profiles
-xwayland-satellite       # XWayland for niri
-spotify                  # user-requested app
-apple-fonts              # SF Pro — system UI font (installed separately, non-fatal)
-```
-
-Enable `[multilib]` in `/etc/pacman.conf` for steam.
+`[multilib]` is enabled by the installer (steam, lib32 drivers). NVIDIA gets
+`nvidia-open-dkms` + utils, chosen at install time (`modules/lib.sh:
+gpu_extras`). Don't add packages anywhere but these lists.
 
 ### Services to enable
 ```bash
@@ -144,18 +130,16 @@ active connection) and reads `ip` for routes / local IP / the wired NIC. **No
 ├── niri/
 │   ├── config.kdl                  # see §4
 │   └── monitor.kdl                 # written by nwg-displays
-├── quickshell/
+├── quickshell/                    # → dotfiles/quickshell (see §5)
 │   ├── shell.qml                   # entry point
-│   ├── Theme.qml                   # tokens (colors, radii, blur, anim)
-│   ├── bars/
-│   │   ├── TopBar.qml              # hover-reveal, waveform when playing
-│   │   ├── SideBar.qml             # workspaces + apps + sysmon + power
-│   │   └── Waveform.qml            # cava-driven animated bars
-│   ├── overlays/
-│   │   ├── Launcher.qml            # Launchpad-style app grid (Mod+Space)
-│   │   └── PowerFlyout.qml         # lock/signout/suspend/reboot/poweroff (Mod+Esc)
-│   ├── services/                   # MPRIS, audio, network, sys stats
-│   └── cava.conf                   # config for the Waveform bars
+│   ├── theme/Theme.qml             # tokens (colors, radii, bezel, anim) — live from ~/.config/rice/colors
+│   ├── bars/EdgeBar.qml            # right-edge bezel bar + its panels; widgets/ = its icons
+│   ├── bars/TopBar.qml             # media notch (waveform while playing)
+│   ├── panels/                     # audio, network, bluetooth, calendar, weather, display, …
+│   ├── ui/                         # Panel card, BarButton, Slider, Toggle, ListRow, TextBox
+│   ├── overlays/                   # Launcher (Mod+Space), PowerFlyout (Mod+Esc), ThemePicker, RgbControl, VolumeOSD
+│   ├── services/                   # Niri, Panels, Network (iwd), Bluetooth, SysStats, Weather, Updates, Agents, …
+│   └── cava.conf                   # config for the waveform
 ├── alacritty/alacritty.toml
 ├── mako/config                     # notification daemon
 ├── cava/config
@@ -191,13 +175,16 @@ match the HTML mockup.
 - **Animations:** keep niri's defaults but bump
   `window-open` and `workspace-switch` curves to feel slightly
   springy. Reference: niri's `animations { ... }` block.
-- **Keybinds (must match):**
+- **Keybinds (must match):** every bind carries a `hotkey-overlay-title` —
+  `sanganak-keybindings` and niri's own overlay show it, so a new bind needs one.
 
 | Bind | Action |
 |---|---|
 | Super+Return | alacritty |
 | Super+Space | toggle Quickshell launcher (`qs ipc call launcher toggle`) |
 | Super+Escape | toggle power flyout (`qs ipc call power toggle`) |
+| Super+Alt+Space | sanganak menu panel (packages, updates, keybindings, theme, …) |
+| Super+K | keybindings list (`sanganak-keybindings`, read from the live config) |
 | Super+L | lock — `pgrep -x hyprlock \|\| hyprlock` |
 | Super+W | close window |
 | Super+F | maximize column |
@@ -227,65 +214,42 @@ This is the heaviest piece — keep it modular and **read the
 Quickshell docs first** (`quickshell.outfoxxed.me`). Key APIs:
 `PanelWindow`, `MprisPlayer`, `Process`, `FileView`, `DBusConnection`.
 
-### 5.1 TopBar (`bars/TopBar.qml`)
+### 5.1 Edge bar (`bars/EdgeBar.qml`) — replaces the old SideBar
 
-- A `PanelWindow` anchored to the **top edge**, behind the cursor.
-- **Default state:** `implicitHeight: 6` (thin strip). Visible **only
-  if** `Mpris.activePlayer.playbackStatus === Playing` — otherwise
-  fully hidden (`visible: false`).
-- **When music plays:** render a 12-bar waveform centered, animated
-  from MPRIS metadata (use a simple animated bar set — the real
-  waveform from PipeWire is overkill and we want low CPU).
-- **On hover:** animate `implicitHeight` 6 → 84px, `radius` 999 → 18,
-  reveal 5 cells: Time / Calendar / Media / Weather / Notifications.
-  Animations: 380ms with `easeOutCubic`. Cursor leaving collapses
-  back.
-- **Hover hit region** must extend a bit above the visible bar (an
-  invisible 18px-tall hit area at `y=0`) so it triggers as soon as the
-  cursor reaches the edge — matches the HTML mockup.
-- **Weather** via `Process { command: ["curl","-s","wttr.in/?format=j1"] }`,
-  refresh every 900s, parse JSON, render icon by `weatherCode`.
-- **Notifications** count = unread count from `Notifications.qml`
-  service.
-- Width: stretches `left = SideBar.right + 12` to `right - 12`.
+Rewritten from the user's Omarchy `arjun.bar` (no Omarchy code, no Hyprland):
 
-### 5.2 SideBar (`bars/SideBar.qml`)
+- **Right edge**, one per monitor. At rest a 2px input strip; touching the
+  edge slides out a **solid black band** (`Theme.barSize` 56px) the full height
+  of the screen, with **concave fillets** into the top and bottom edges; while
+  it is out, black corner pieces round the two far corners, so all four screen
+  corners share `Theme.screenRadius` (24).
+- **Pin:** click empty band space → stays out and reserves its width
+  (`ExclusionMode.Normal`); a chevron at the top or **Escape** (while the
+  pointer is on it) unpins. It also stays out while one of its panels is open.
+- **Sections** top → bottom: chip logo (click: fastfetch, right: menu),
+  niri workspaces of *that* output · indicators (DnD, recording), keyboard
+  layout (only with >1), 12-hour vertical clock, weather, menu, updates
+  (only when pending) · sysmon meters, tray, display, AI agents (hidden until
+  usage exists), bluetooth, network, audio (wheel = volume), battery
+  (**laptop only**, `Services.Battery.present` — never on the desktop), power.
+- **Panels** (`panels/*`, card = `ui/Panel.qml`): audio mixer (outputs, inputs,
+  per-app), network (iwd list, inline password, wired override), bluetooth,
+  calendar (ISO weeks), weather (hourly + 3-day, settable location), display
+  (brightness via brightnessctl / ddcutil, niri output scale), battery + power
+  profiles, AI agents (limits, tokens by day / model), system detail, updates,
+  sanganak menu. One open at a time (`services/Panels.qml`); open from the bar
+  or `qs ipc call panel toggle <id>`.
 
-- `PanelWindow` anchored **left**, 72px wide, full height with 12px
-  gap on top/left/bottom.
-- Top-to-bottom layout matches mockup:
-  1. **Launcher** (logo)
-  2. **Focused window** card (24×24 icon + 9px name, ellipsized)
-  3. **Workspaces 1–9** (vertical dots; active = vertical pill in
-     accent; occupied = solid dim dot)
-  4. *spacer*
-  5. **SystemMonitor** mini (CPU/MEM/GPU bars, polled every 1.5s).
-     **On hover, popover** opens to the right with detailed view
-     (clock speed, temps, VRAM, core counts). Use slide+fade
-     animation (240ms).
-  6. **Clock** (HH:MM + day abbreviation)
-  7. **QuickSettings** button (single ⚙ that opens a popover with
-     Wi-Fi / BT / volume / brightness / DND / dark — all toggleable)
-  8. **AppDock** — chrome, spotify, terminal (alacritty), discord,
-     whatsapp, steam. Read from `dock.json` so user can edit. Each
-     icon: 44×44 round-rect, hover scales 1.08, click scales 0.94,
-     running-dot indicator below. Last item is a dashed `+` button
-     that opens a small editor dialog (add/remove/reorder
-     `dock.json`).
-  9. **Power** button → flyout (lock / sign out / suspend / reboot /
-     power off). Use `systemctl suspend|reboot|poweroff` — these route
-     through logind + polkit, so the active-session user runs them
-     without a password. (`loginctl` has NO power verbs — only session/
-     seat management — so don't use it for poweroff/reboot/suspend.)
+### 5.2 Media notch (`bars/TopBar.qml`) — Omarchy `arjun.topbar`
 
-- **Battery widget is hardware-gated: laptop shows it, desktop hides it.**
-  The sidebar battery pill (between the volume and power buttons) is driven by
-  the `Services.Battery` singleton, which polls `/sys/class/power_supply/BAT*`
-  and exposes `present`. The pill is `visible: Services.Battery.present`, so it
-  appears automatically on a laptop install and stays hidden on the desktop —
-  one set of dotfiles, no profile flag. **Do not hardcode it on or off**; the
-  `present` gate is the single source of truth. The desktop must never render a
-  battery indicator.
+Invisible at rest. While media plays, a floating cava waveform (no background;
+simulated when cava hears nothing, skipped in the light profile). Hovering the
+top-centre edge opens a black notch hanging from the top edge (concave top
+corners): album art, source (click raises the app through niri), title /
+artist, prev / play / next, progress.
+
+Workspaces, focused window, keyboard layouts and app focusing all come from
+**`services/Niri.qml`** (`niri msg --json event-stream`). Never call hyprctl.
 
 ### 5.3 LockScreen (`overlays/LockScreen.qml`)
 
@@ -396,21 +360,25 @@ do not paper over.
       QML errors in stderr.
 - [ ] Boot → ly greeter on tty1 → log in → niri session lands with
       wallpaper visible.
-- [ ] Sidebar visible, workspaces respond to `Super+1..9`.
-- [ ] Hover top edge → bar drops down with 5 cells populated (time
-      ticks live, weather fetched, media reflects spotify state).
-- [ ] Start music → bar shows waveform when not hovered, hides when
-      music stops and not hovered.
-- [ ] App dock launches each app; running indicator appears.
-- [ ] Hover system monitor → detail popover opens, numbers update.
+- [ ] Touch the right edge → the black band slides out with filleted ends
+      and the far corners rounded; it tucks away 250ms after leaving.
+      Click empty band → pinned (windows move aside); Escape / chevron unpins.
+- [ ] Band workspaces show only that output's niri workspaces and follow
+      `Super+1..9`; clicking one focuses it on that output.
+- [ ] Every band icon opens its panel next to it; Escape / click outside
+      closes; only one panel open at a time.
+- [ ] Start music → waveform floats at the top centre; hover the top edge →
+      the notch opens with art / title / controls; clicking the source
+      raises the app.
+- [ ] `Super+K` lists the binds of the live config; `Super+Alt+Space` opens
+      the menu, and its package / update tools open as floating terminals.
 - [ ] `Super+Escape` opens power flyout; Lock / Sign out / Suspend /
       Reboot / Power off all fire (test reboot LAST).
 - [ ] `Super+L` → lock screen appears, time correct, password unlocks.
 - [ ] System never auto-locks and never auto-blanks; only `Mod+L` and
       the power flyout change state.
 - [ ] `Print` opens niri's built-in screenshot UI; output saved to `~/Pictures/Screenshots/`.
-- [ ] Notifications: `notify-send "test"` shows popup top-right,
-      auto-dismisses, appears in top bar history.
+- [ ] Notifications: `notify-send "test"` shows a mako popup on the theme base.
 - [ ] Battery widget: **visible on laptop** (BAT* present, shows level +
       percent), **hidden on desktop** (no BAT* node).
 - [ ] Terminal (alacritty) is translucent; Chrome / Spotify / Steam are
@@ -562,3 +530,37 @@ without it keep the legacy `#0f1016`). All other shades are derived. Same genera
 Full colour map + procedure: **`docs/THEMING.md`** and the
 **`.claude/skills/rice-theme`** skill. Edit rule: themed colour → a `Theme`
 token (QML) or an `@TOKEN@` in a template (generated config), never a literal.
+
+---
+
+## 14. Omarchy-style tools, ISO, Finish setup
+
+**Terminal tools** (`scripts/sanganak-*`, installed to `/usr/local/bin`; float
+via niri rules on app-id `sanganak.float` / `sanganak.update`):
+`sanganak-pkg-install` (repo, fzf + preview), `sanganak-pkg-aur-install`
+(alt-b shows the PKGBUILD), `sanganak-pkg-remove`, `sanganak-update` (pending
+list → keyring → `-Syu` → AUR → firmware metadata → orphans → .pacnew →
+reboot on kernel change; log in `~/.local/state/sanganak/`),
+`sanganak-keybindings`, `sanganak-agent-usage` (Claude / Codex usage records
+for the agents panel).
+
+**ISO** (`iso/build.sh`, `sudo` from a normal user): archiso releng + an
+offline repo holding the base system (all bootloader / laptop / USB
+variants), `desktop.txt` and prebuilt `yay-bin`, with every dependency.
+`sanganak-installer` (gum) starts on tty1 → `bootstrap.sh` with
+`OFFLINE_CONF` → pacstrap from the repo → `iso-stage/06-rice-chroot.sh` sets
+the rice up for the user with **no network** (modules run with
+`SANGANAK_CHROOT=1`: no `--now`, no downloads). USB Secure Boot (shim + MOK)
+stays on `scripts/build-usb.sh` from a running host.
+
+**Finish setup** (`sanganak-finish-setup`): niri runs it with `--auto` at
+every login; it exits at once once `~/.local/state/sanganak/setup-done`
+exists. Otherwise it opens a floating terminal, gets online (Wi-Fi picker if
+needed), upgrades, installs `apps.txt` + GPU extras + `aur.txt`, applies board
+quirks that need the new packages. `install.sh` (in-place path) marks setup
+done itself.
+
+**Board quirks** (`modules/11-board-quirks.sh`, keyed on DMI board name):
+B650 EAGLE AX → `acpi_enforce_resources=lax`, `spd5118` blacklist,
+`rgb-apply` + boot/resume units, `pc-rgb` sudoers rule for the RGB overlay.
+
