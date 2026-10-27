@@ -65,15 +65,26 @@ if [[ "$PROFILE" == "laptop" ]]; then
     )
 fi
 
-# Mirror selection — let the user fix this post-install if desired.
-log "Updating mirrorlist via reflector if available"
-if command -v reflector >/dev/null 2>&1; then
-    reflector --latest 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist || \
-        warn "reflector failed; using existing mirrorlist"
+# The sanganak ISO installs the core desktop too (packages/desktop.txt plus
+# the prebuilt AUR helper), all from its offline repo, so the first boot lands
+# in a working niri session; Finish setup adds the rest online. A plain Arch
+# ISO install keeps the old split (base now, ./install.sh after reboot).
+PACSTRAP_ARGS=(-K)
+if [[ -n "${OFFLINE_CONF:-}" ]]; then
+    source "$ROOT_DIR/modules/lib.sh"
+    mapfile -t -O "${#BASE_PKGS[@]}" BASE_PKGS < <(read_list "$ROOT_DIR/packages/desktop.txt"; read_list "$ROOT_DIR/packages/aur-offline.txt")
+    PACSTRAP_ARGS+=(-C "$OFFLINE_CONF")
+else
+    # Mirror selection — let the user fix this post-install if desired.
+    log "Updating mirrorlist via reflector if available"
+    if command -v reflector >/dev/null 2>&1; then
+        reflector --latest 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist || \
+            warn "reflector failed; using existing mirrorlist"
+    fi
 fi
 
 log "Pacstrapping base system (this is the long step)"
-pacstrap -K /mnt "${BASE_PKGS[@]}"
+pacstrap "${PACSTRAP_ARGS[@]}" /mnt "${BASE_PKGS[@]}"
 
 log "Generating fstab"
 genfstab -U /mnt >> /mnt/etc/fstab

@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# sanganak-installer — the ISO's configurator (gum TUI), modelled on the
+# Omarchy ISO's: a few questions, one confirmation, then bootstrap.sh does the
+# install from the ISO's offline repo. Starts by itself on tty1; run it again
+# any time from the live shell.
+#
+# What it asks: disk, user + password, hostname, timezone, profile (guessed:
+# vm / laptop / personal), Secure Boot (SSD only, off by default). Wi-Fi is
+# optional: the install itself is offline, and Finish setup asks again after
+# the first login if needed.
+set -uo pipefail
+
+REPO=/root/sanganak
+WALLPAPERS=/root/sanganak-wallpapers
+OFFLINE_CONF=/etc/sanganak/pacman-offline.conf
+LOGO=/usr/share/sanganak/logo.ansi
+ACCENT="#f0522d"
+
+export GUM_CHOOSE_CURSOR_FOREGROUND="$ACCENT" GUM_CHOOSE_SELECTED_FOREGROUND="$ACCENT"
+export GUM_INPUT_CURSOR_FOREGROUND="$ACCENT" GUM_INPUT_PROMPT_FOREGROUND="$ACCENT"
+export GUM_CONFIRM_SELECTED_BACKGROUND="$ACCENT" GUM_FILTER_INDICATOR_FOREGROUND="$ACCENT"
+export GUM_FILTER_MATCH_FOREGROUND="$ACCENT"
+
+header() {
+    clear
+    [[ -f "$LOGO" ]] && cat "$LOGO"
+    gum style --bold --foreground "$ACCENT" "  संगणक  sanganak installer"
+    [[ -n "${1:-}" ]] && gum style --faint "  $1"
+    echo
+}
+abort() { gum style --foreground 1 "$*"; echo; gum confirm "Start over?" && exec "$0"; exit 1; }
+
+# ---- disk -------------------------------------------------------------------
+header "Pick the disk to install on. Everything on it is erased."
+mapfile -t disks < <(lsblk -dpno NAME,SIZE,MODEL,TRAN,TYPE | awk '$NF=="disk"' | grep -Ev 'loop|sr[0-9]|zram' \
+    | while read -r name size rest; do
+        live=""; [[ "$(findmnt -no SOURCE /run/archiso/bootmnt 2>/dev/null)" == "$name"* ]] && live="  (this installer — can't use)"
+        printf '%-14s %8s  %s%s\n' "$name" "$size" "$(sed 's/ disk$//' <<<"$rest")" "$live"
+    done)
+(( ${#disks[@]} )) || abort "No disks found."
+choice="$(printf '%s\n' "${disks[@]}" | gum choose --header "Target disk")" || exit 1
+DISK="${choice%% *}"
+[[ "$choice" == *"can't use"* ]] && abort "$DISK is the installer itself."
+
+# Windows guard: bootstrap.sh refuses a Windows disk; ask here so it's a choice,
+# not a dead end.
+FORCE_WIN=false
+if lsblk -nrpo FSTYPE "$DISK" | grep -qiE 'ntfs|bitlocker'; then
+    gum style --foreground 3 "$DISK has NTFS/BitLocker partitions — it looks like a Windows disk."
+    gum confirm --default=false "Erase Windows on $DISK anyway?" || abort "Pick another disk."
+    FORCE_WIN=true
+fi
+
+# ---- user -------------------------------------------------------------------
+header "Your account"
+USERNAME="$(gum input --placeholder "username" --value "${SUDO_USER:-}" --header "Username (lowercase)")" || exit 1
+[[ "$USERNAME" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || abort "Usernames are lowercase letters, digits, - and _."
+while :; do
+    PASS1="$(gum input --password --header "Password for $USERNAME (also used for root)")" || exit 1
+    PASS2="$(gum input --password --header "Again")" || exit 1
+    [[ -n "$PASS1" && "$PASS1" == "$PASS2" ]] && break
+    gum style --foreground 1 "Passwords didn't match or were empty."
+done
+HOSTNAME_="$(gum input --header "Computer name" --value "sanganak")" || exit 1
+[[ "$HOSTNAME_" =~ ^[a-zA-Z0-9-]{1,63}$ ]] || abort "Computer names are letters, digits and -."
+
+# ---- timezone ------------------------------------------------------------------
+header "Timezone"
+guess=""
+guess="$(curl -fsS --max-time 3 https://ipapi.co/timezone 2>/dev/null || true)"
+TIMEZONE="$( { [[ -n "$guess" ]] && echo "$guess"; timedatectl list-timezones; } | awk '!seen[$0]++' \
+             | gum filter --header "Type to search${guess:+ (detected: $guess)}" --height 15)" || exit 1
+
+# ---- profile -------------------------------------------------------------------
+virt="$(systemd-detect-virt 2>/dev/null || echo none)"
+if [[ "$virt" != none ]]; then default_profile=vm
+elif ls /sys/class/power_supply/BAT* >/dev/null 2>&1; then default_profile=laptop
+else default_profile=personal; fi
+header "Machine type (detected: $default_profile)"
+PROFILE="$(printf '%s\n' "$default_profile" personal laptop vm | awk '!seen[$0]++' \
+           | gum choose --header "personal = desktop, laptop = battery + power management, vm = virtual machine")" || exit 1
+
+# ---- Secure Boot (SSD, UEFI only) --------------------------------------------
+SECURE_BOOT=false
+removable="$(cat "/sys/block/$(basename "$DISK")/removable" 2>/dev/null || echo 0)"
+tran="$(lsblk -dno TRAN "$DISK" 2>/dev/null)"
+if [[ -d /sys/firmware/efi && "$removable" != 1 && "$tran" != usb && "$PROFILE" != vm ]]; then
+    header "Secure Boot"
+    gum style --faint "  Off: GRUB. On: Limine + sbctl with your own keys — needs the firmware in Setup Mode," \
+                      "  and changes PCR 7 (BitLocker on a dual-boot Windows will ask for its recovery key)."
+    gum confirm --default=false "Set up Secure Boot?" && SECURE_BOOT=true
+fi
+
+# ---- confirm -----------------------------------------------------------------------
+header "Ready to install"
+gum style --border rounded --border-foreground "$ACCENT" --padding "1 2" \
+    "Disk        $DISK  ($(lsblk -dno SIZE,MODEL "$DISK" | xargs))  — ERASED" \
+    "User        $USERNAME" \
+    "Computer    $HOSTNAME_" \
+    "Timezone    $TIMEZONE" \
+    "Profile     $PROFILE" \
+    "Boot        $([[ $SECURE_BOOT == true ]] && echo 'Limine + Secure Boot' || echo GRUB)" \
+    "" \
+    "The desktop installs from this USB (no internet needed)." \
+    "Apps, gaming and AUR packages install on your first login."
+echo
+gum confirm --default=false "Erase $DISK and install?" || abort "Nothing was changed."
+
+# ---- install ------------------------------------------------------------------------
+header "Installing — this takes a few minutes"
+args=(--disk "$DISK" --user "$USERNAME" --hostname "$HOSTNAME_" --timezone "$TIMEZONE" --profile "$PROFILE" --yes)
+[[ $SECURE_BOOT == true ]] && args+=(--secure-boot)
+[[ $FORCE_WIN == true ]] && args+=(--i-know-this-is-windows)
+LOG=/root/sanganak-install.log
+if env OFFLINE_CONF="$OFFLINE_CONF" WALLPAPER_SRC="$([[ -d $WALLPAPERS ]] && echo "$WALLPAPERS")" \
+       USER_PASSWORD="$PASS1" ROOT_PASSWORD="$PASS1" \
+       bash "$REPO/bootstrap.sh" "${args[@]}" 2>&1 | tee "$LOG"; [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+    echo
+    gum style --bold --foreground 2 "Installed. Remove the USB stick when the screen goes dark."
+    [[ $SECURE_BOOT == true ]] && gum style --faint "After the first boot: put the firmware in Setup Mode and run 'sudo sb-finalize'."
+    gum confirm "Reboot now?" && systemctl reboot
+else
+    echo
+    gum style --foreground 1 "The install failed. The full log is $LOG."
+    gum style --faint "Fix the problem and run 'sanganak-installer' again, or inspect with the shell."
+fi

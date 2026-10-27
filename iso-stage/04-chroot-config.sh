@@ -148,7 +148,16 @@ if [[ -d "/home/$TARGET_USERNAME/arch-setup" ]]; then
 fi
 
 # ---- first-login hint ------------------------------------------------------
-install -Dm644 /dev/stdin /etc/motd <<EOF
+if [[ -n "${SANGANAK_ISO:-}" ]]; then
+    # ISO install: the desktop is already set up; apps come from Finish setup.
+    install -Dm644 /dev/stdin /etc/motd <<EOF
+─────────────────────────────────────────────────────────────────────
+  Welcome to sanganak. Log in at the ly screen; Finish setup opens on
+  your first login (or run: sanganak-finish-setup).
+
+EOF
+else
+    install -Dm644 /dev/stdin /etc/motd <<EOF
 ─────────────────────────────────────────────────────────────────────
   Welcome to sanganak. To finish setup, run:
 
@@ -156,5 +165,6 @@ install -Dm644 /dev/stdin /etc/motd <<EOF
       ./install.sh --profile $PROFILE
 
 EOF
+fi
 
 ok "chroot config complete"

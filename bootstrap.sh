@@ -313,12 +313,29 @@ fi
 
 # Copy this entire repo into the new system under the user's homedir, so the
 # rice install.sh is available immediately after first boot.
+if [[ -n "${WALLPAPER_SRC:-}" && -d "$WALLPAPER_SRC" ]]; then
+    install -d /mnt/var/tmp/sanganak-wallpapers
+    cp -a "$WALLPAPER_SRC/." /mnt/var/tmp/sanganak-wallpapers/
+fi
+
 log "Copying arch-setup tree into /mnt/home/$TARGET_USERNAME/arch-setup"
 install -d -m 0755 "/mnt/home/$TARGET_USERNAME"
 cp -a "$ROOT_DIR/." "/mnt/home/$TARGET_USERNAME/arch-setup/"
 # chown is applied inside chroot once the user exists.
 
 # Hand off the in-chroot script through arch-chroot.
+# Offline (sanganak ISO): the bootloader modules call `pacman -S` inside the
+# chroot, and the target has no network yet. Bind the ISO's repo in and point
+# a chroot-only pacman.conf at it; both are removed before unmounting.
+CHROOT_PACMAN=""
+if [[ -n "${OFFLINE_CONF:-}" ]]; then
+    offline_dir="$(sed -n 's|^Server = file://||p' "$OFFLINE_CONF" | head -n1)"
+    install -d "/mnt$offline_dir"
+    mount --bind "$offline_dir" "/mnt$offline_dir"
+    install -Dm644 "$OFFLINE_CONF" /mnt/etc/pacman-offline.conf
+    CHROOT_PACMAN='pacman() { command pacman --config /etc/pacman-offline.conf "$@"; }; export -f pacman; pacman -Sy >/dev/null;'
+fi
+
 log "Entering arch-chroot for system configuration"
 install -Dm755 "$STAGE_DIR/04-chroot-config.sh"     "/mnt/root/04-chroot-config.sh"
 install -Dm755 "$STAGE_DIR/05-bootloader-chroot.sh" "/mnt/root/05-bootloader-chroot.sh"
@@ -331,9 +348,10 @@ arch-chroot /mnt /bin/bash -lc "
     export TARGET_HOSTNAME='$TARGET_HOSTNAME' TARGET_USERNAME='$TARGET_USERNAME' \
            TIMEZONE='$TIMEZONE' LOCALE='$LOCALE' KEYMAP='$KEYMAP' \
            PROFILE='$PROFILE' SECURE_BOOT='$SECURE_BOOT' \
-           TARGET_TYPE='$TARGET_TYPE' \
+           TARGET_TYPE='$TARGET_TYPE' SANGANAK_ISO='${OFFLINE_CONF:+1}' \
            USER_PASSWORD='$USER_PASSWORD' ROOT_PASSWORD='$ROOT_PASSWORD' \
            IS_CHROOT=1 MODULES_DIR=/root/modules
+    $CHROOT_PACMAN
     bash /root/04-chroot-config.sh
     bash /root/05-bootloader-chroot.sh
     rm -f /root/04-chroot-config.sh /root/05-bootloader-chroot.sh
@@ -341,6 +359,17 @@ arch-chroot /mnt /bin/bash -lc "
 "
 
 # ---- finalize -------------------------------------------------------------
+if [[ -n "${OFFLINE_CONF:-}" ]]; then
+    log "Setting up the rice for $TARGET_USERNAME (offline)"
+    arch-chroot /mnt /usr/bin/env \
+        TARGET_USERNAME="$TARGET_USERNAME" PROFILE="$PROFILE" LOCALE="$LOCALE" TIMEZONE="$TIMEZONE" \
+        REPO="/home/$TARGET_USERNAME/arch-setup" WALLPAPER_SRC="${WALLPAPER_SRC:+/var/tmp/sanganak-wallpapers}" \
+        bash -c "$CHROOT_PACMAN bash /home/$TARGET_USERNAME/arch-setup/iso-stage/06-rice-chroot.sh"
+    umount "/mnt$offline_dir" || true
+    rm -f /mnt/etc/pacman-offline.conf
+    rm -rf /mnt/var/tmp/sanganak-wallpapers
+fi
+
 log "Syncing and unmounting"
 sync
 umount -R /mnt || warn "some mounts didn't unmount cleanly; check manually"

@@ -25,20 +25,27 @@ if [[ "$is_uefi" != "true" ]]; then
 fi
 
 # 3) Network connectivity (needed for pacstrap)
-log "Checking network…"
-if ! curl -fsS --max-time 5 https://archlinux.org/ -o /dev/null; then
-    warn "No HTTPS to archlinux.org. Trying ping…"
-    if ! ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then
-        die "No network. Configure with 'iwctl' (wifi) or check the ethernet cable, then re-run."
+# The sanganak ISO carries its own package repo (OFFLINE_CONF), so the core
+# install needs no network at all; a plain Arch ISO needs it for pacstrap.
+if [[ -n "${OFFLINE_CONF:-}" ]]; then
+    ok "installing from the ISO's offline repo — no network needed"
+else
+    log "Checking network…"
+    if ! curl -fsS --max-time 5 https://archlinux.org/ -o /dev/null; then
+        warn "No HTTPS to archlinux.org. Trying ping…"
+        if ! ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then
+            die "No network. Configure with 'iwctl' (wifi) or check the ethernet cable, then re-run."
+        fi
     fi
-fi
-ok "network reachable"
+    ok "network reachable"
 
-# 4) Pacman keyring on the ISO is current (otherwise pacstrap fails with signature errors)
-log "Refreshing pacman keys on the ISO"
-pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>&1 || warn "could not refresh archlinux-keyring (will retry during pacstrap)"
+    # 4) Pacman keyring on the ISO is current (otherwise pacstrap fails with signature errors)
+    log "Refreshing pacman keys on the ISO"
+    pacman -Sy --noconfirm archlinux-keyring >/dev/null 2>&1 || warn "could not refresh archlinux-keyring (will retry during pacstrap)"
+fi
 
 # 5) Required tools in the ISO
+
 for t in parted mkfs.fat mkfs.ext4 sgdisk arch-chroot pacstrap genfstab lsblk findmnt curl; do
     command -v "$t" >/dev/null || die "missing required tool in ISO: $t"
 done
