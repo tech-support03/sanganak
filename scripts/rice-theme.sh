@@ -218,11 +218,14 @@ PY
     # btop theme written to a tmp file by python; place it (de-symlinking).
     write_real "$BTOP_THEME" < /tmp/.rice-btop-theme && rm -f /tmp/.rice-btop-theme
 
-    # Lock-screen logo (hyprlock image widget) in the new colours. Non-fatal:
-    # without it hyprlock just skips the image.
+    # The logo in the new colours: the lock screen's PNG (hyprlock image
+    # widget) and fastfetch's half-block art. Non-fatal: without them hyprlock
+    # skips the image and fastfetch prints no logo.
     if command -v sanganak-logo >/dev/null 2>&1; then
         sanganak-logo png "$HOME/.config/hypr/sanganak-logo.png" 320 \
             "$C1" "$C2" "$C3" "${BASE:-$LEGACY_BASE}" || c_err "logo render failed (lock screen shows no logo)"
+        sanganak-logo ansi "$HOME/.config/fastfetch/sanganak-logo.ansi" 32 \
+            "$C1" "$C2" "$C3" "${BASE:-$LEGACY_BASE}" || c_err "logo render failed (fastfetch shows no logo)"
     fi
 
     # mako has no file watch; reload it if it's running.

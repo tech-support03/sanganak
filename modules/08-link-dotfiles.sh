@@ -70,7 +70,6 @@ link "$DOTFILES_DIR/gtk-3.0/settings.ini"       "$HOME/.config/gtk-3.0/settings.
 link "$DOTFILES_DIR/gtk-4.0/settings.ini"       "$HOME/.config/gtk-4.0/settings.ini"
 link "$DOTFILES_DIR/cava/config"                "$HOME/.config/cava/config"
 link "$DOTFILES_DIR/fastfetch/config.jsonc"     "$HOME/.config/fastfetch/config.jsonc"
-link "$DOTFILES_DIR/fastfetch/sanganak-logo.txt" "$HOME/.config/fastfetch/sanganak-logo.txt"
 link "$DOTFILES_DIR/btop/btop.conf"              "$HOME/.config/btop/btop.conf"
 link "$DOTFILES_DIR/btop/themes/driftos.theme"   "$HOME/.config/btop/themes/driftos.theme"
 

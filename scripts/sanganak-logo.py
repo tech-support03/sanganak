@@ -4,15 +4,19 @@
     sanganak-logo png OUT SIZE c1 c2 c3 base    antialiased RGBA PNG (hyprlock)
     sanganak-logo dur OUT PX   c1 c2 c3 base    durdraw file for ly's dur_file
                                                 animation (PX wide, PX/2 rows)
+    sanganak-logo ansi OUT PX  c1 c2 c3 base    truecolor ANSI half-block art for
+                                                fastfetch's file-raw logo
 
 Same geometry as dotfiles/quickshell/theme/ChipLogo.qml and the canvas mark
 (a 100-unit grid): c2 pins + ridge, c1 sun, c3 ground line, chip body on base.
 Pure stdlib — no rsvg/PIL — so it runs as root from 07-services.sh before
 anything else is installed.
 
-The dur output only uses '▀' and ' ' (both in every console font): each cell
-packs two pixels, top = foreground, bottom = background, in xterm-256 colours
-matched the way ly converts them back to RGB (ly 1.5 DurFile.zig).
+The terminal outputs (dur, ansi) share one pixel grid: pins, sun and ridge are
+placed on whole pixels so the pins stay evenly spaced and the ridge one pixel
+wide at any size. Each cell packs two pixels with '▀'/'▄'/'█'. dur uses
+xterm-256 colours matched the way ly converts them back to RGB (ly 1.5
+DurFile.zig); ansi uses 24-bit colour and leaves the background transparent.
 """
 import gzip
 import json
@@ -98,16 +102,16 @@ def layers(c1, c2, c3, base, tty):
     coarse console grid and raises the body off the (identical) ly background."""
     fog, acc, grn, blk = rgb(c2), rgb(c1), rgb(c3), rgb(base)
     out = []
-    pr = 0 if tty else 3          # rounded pin ends alias into notches on a tty
-    for p in (26, 40, 54, 68):
-        out.append((rrect(p, 5, 6, 14, pr), fog))
-        out.append((rrect(p, 81, 6, 14, pr), fog))
-        out.append((rrect(5, p, 14, 6, pr), fog))
-        out.append((rrect(81, p, 14, 6, pr), fog))
+    if not tty:                   # tty pins are placed on whole pixels (pixel_grid)
+        for p in (26, 40, 54, 68):
+            out.append((rrect(p, 5, 6, 14, 3), fog))
+            out.append((rrect(p, 81, 6, 14, 3), fog))
+            out.append((rrect(5, p, 14, 6, 3), fog))
+            out.append((rrect(81, p, 14, 6, 3), fog))
     out.append((rrect(15, 15, 70, 70, 14), mix(blk, (255, 255, 255), 0.05) if tty else blk))
     out.append((ring(15, 15, 70, 70, 14, 3.2 if tty else 1.2), mix(blk, fog, 0.22)))
-    # tty: centre the sun on a pixel centre of the 32-px grid so it stays round
-    out.append((circle(39.06, 35.94, 7.0) if tty else circle(38.2, 35, 6.5), acc))
+    if not tty:                   # tty sun is centred on a pixel (pixel_grid)
+        out.append((circle(38.2, 35, 6.5), acc))
     if not tty:                   # tty draws the ridge as a 1-px pixel line instead
         out.append((polyline(RIDGE, 4.7), fog))
     out.append((rrect(24, 71.5, 52, 4.6 if tty else 3.6, 1.8), grn))
@@ -177,29 +181,63 @@ def nearest(c):
     return min(PAL, key=lambda p: sum((a - b) ** 2 for a, b in zip(p[1], c)))[0]
 
 
-def write_dur(path, n, c1, c2, c3, base):
+def pixel_grid(n, c1, c2, c3, base):
+    """n×n RGB pixels for the terminal outputs; None = background."""
     n -= n % 2
     ss = 3
     buf, m = rasterize(n, ss, layers(c1, c2, c3, base, tty=True))
-    bg = rgb(base)
+    fog, acc = rgb(c2), rgb(c1)
+
+    # Pins: 4 per side on an integer pitch, centred on the chip, so every gap
+    # is identical (snapping the vector pins to the grid made the middle pair
+    # look closer). They sit behind the body.
+    pitch = max(3, round(n * 0.14))
+    pw = max(1, round(n * 0.06))
+    span = 3 * pitch + pw
+    start = (n - span) // 2
+    outer, inner = round(n * 0.05), round(n * 0.20)
+    pins = set()
+    for k in range(4):
+        for a in range(start + k * pitch, start + k * pitch + pw):
+            for d in range(outer, inner):
+                for x, y in ((a, d), (a, n - 1 - d), (d, a), (n - 1 - d, a)):
+                    pins.add((x, y))
+
+    # Sun: a disc centred on a pixel centre so it stays round at any size.
+    scx, scy = int(38.2 * n / 100) + 0.5, int(35 * n / 100) + 0.5
+    sr = 7.0 * n / 100
 
     ridge = set(pixel_line(n, RIDGE))
-    fog = rgb(c2)
+    grid = []
+    for y in range(n):
+        row = []
+        for x in range(n):
+            counts = {}
+            for sy in range(ss):
+                r0 = (y * ss + sy) * m + x * ss
+                for sx in range(ss):
+                    c = buf[r0 + sx]
+                    counts[c] = counts.get(c, 0) + 1
+            c = max(counts, key=counts.get)
+            if c is None and (x, y) in pins:
+                c = fog
+            if c is not None and (x + 0.5 - scx) ** 2 + (y + 0.5 - scy) ** 2 <= sr * sr:
+                c = acc
+            if (x, y) in ridge:
+                c = fog
+            row.append(c)
+        grid.append(row)
+    return grid
 
-    def pixel(x, y):              # majority colour of the pixel's samples
-        if (x, y) in ridge:
-            return fog
-        counts = {}
-        for sy in range(ss):
-            row = (y * ss + sy) * m + x * ss
-            for sx in range(ss):
-                c = buf[row + sx] or bg
-                counts[c] = counts.get(c, 0) + 1
-        return max(counts, key=counts.get)
 
+def write_dur(path, n, c1, c2, c3, base):
+    grid = pixel_grid(n, c1, c2, c3, base)
+    n = len(grid)
+    bg = rgb(base)
     cache = {}
 
     def idx(c):
+        c = c or bg
         if c not in cache:
             cache[c] = nearest(c)
         return cache[c]
@@ -210,7 +248,7 @@ def write_dur(path, n, c1, c2, c3, base):
     for r in range(rows):
         line = []
         for x in range(n):
-            top, bot = idx(pixel(x, 2 * r)), idx(pixel(x, 2 * r + 1))
+            top, bot = idx(grid[2 * r][x]), idx(grid[2 * r + 1][x])
             line.append(' ' if top == bot else '▀')
             cmap[x][r] = [top, bot]
         contents.append(''.join(line))
@@ -224,15 +262,46 @@ def write_dur(path, n, c1, c2, c3, base):
         f.write(json.dumps(movie, ensure_ascii=False).encode('utf-8'))
 
 
+def write_ansi(path, n, c1, c2, c3, base):
+    """24-bit half-block art; background pixels stay transparent so the logo
+    sits on alacritty's translucent theme base like the rest of fastfetch."""
+    grid = pixel_grid(n, c1, c2, c3, base)
+    n = len(grid)
+
+    def fg(c):
+        return '\x1b[38;2;%d;%d;%dm' % c
+
+    def bgc(c):
+        return '\x1b[48;2;%d;%d;%dm' % c
+    out = []
+    for r in range(n // 2):
+        line = []
+        for x in range(n):
+            t, b = grid[2 * r][x], grid[2 * r + 1][x]
+            if t is None and b is None:
+                line.append('\x1b[0m ')
+            elif t == b:
+                line.append('\x1b[0m' + fg(t) + '█')
+            elif b is None:
+                line.append('\x1b[0m' + fg(t) + '▀')
+            elif t is None:
+                line.append('\x1b[0m' + fg(b) + '▄')
+            else:
+                line.append(fg(t) + bgc(b) + '▀')
+        out.append(''.join(line) + '\x1b[0m')
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(out) + '\n')
+
+
 def main(argv):
-    if len(argv) != 8 or argv[1] not in ('png', 'dur'):
+    if len(argv) != 8 or argv[1] not in ('png', 'dur', 'ansi'):
         sys.exit(__doc__)
     mode, out, size = argv[1], argv[2], int(argv[3])
     cols = argv[4:8]
     for c in cols:
         if len(c.lstrip('#')) != 6:
             sys.exit('sanganak-logo: colours must be #rrggbb')
-    (write_png if mode == 'png' else write_dur)(out, size, *cols)
+    {'png': write_png, 'dur': write_dur, 'ansi': write_ansi}[mode](out, size, *cols)
 
 
 if __name__ == '__main__':
