@@ -70,10 +70,27 @@ QtObject {
     readonly property int   blur:     32
 
     // --- shape -------------------------------------------------------------
-    readonly property int radius:      18
+    // One radius system-wide: windows (niri geometry-corner-radius), panels,
+    // cards and the screen corners the edge bar draws all round at 24.
+    readonly property int radius:      24
     readonly property int radiusSmall: 12
+    readonly property int screenRadius: 24
     readonly property int gap:         12
     readonly property int sidebarW:    72
+
+    // --- edge bar + panels (the bezel look) --------------------------------
+    // The edge bar is a solid black band that reads as part of the monitor
+    // bezel; panels it opens share the same black with a 1px accent edge.
+    readonly property color bezel:      "#000000"
+    readonly property int   barSize:    56      // band depth (vertical bar width)
+    readonly property int   barIcon:    15      // glyph size in the band
+    readonly property int   barSlot:    34      // along-bar size of one icon slot
+    readonly property color panelBg:    bezel
+    readonly property color panelEdge:  tint(accent, 0.55)
+    readonly property int   panelWidth: 340
+    // Hover / selected fills on the black panels.
+    readonly property color hoverFill:  Qt.rgba(1, 1, 1, 0.06)
+    readonly property color selectFill: tint(accent, 0.22)
 
     // --- animation ---------------------------------------------------------
     readonly property int  animFast: 180

@@ -1,0 +1,12 @@
+module panels
+AudioPanel 1.0 AudioPanel.qml
+NetworkPanel 1.0 NetworkPanel.qml
+BluetoothPanel 1.0 BluetoothPanel.qml
+CalendarPanel 1.0 CalendarPanel.qml
+WeatherPanel 1.0 WeatherPanel.qml
+DisplayPanel 1.0 DisplayPanel.qml
+BatteryPanel 1.0 BatteryPanel.qml
+AgentsPanel 1.0 AgentsPanel.qml
+SysMonPanel 1.0 SysMonPanel.qml
+UpdatesPanel 1.0 UpdatesPanel.qml
+MenuPanel 1.0 MenuPanel.qml

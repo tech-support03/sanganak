@@ -6,3 +6,7 @@ singleton Bluetooth 1.0 Bluetooth.qml
 singleton Profile 1.0 Profile.qml
 singleton Battery 1.0 Battery.qml
 singleton Audio 1.0 Audio.qml
+singleton Niri 1.0 Niri.qml
+singleton Panels 1.0 Panels.qml
+singleton Updates 1.0 Updates.qml
+singleton Agents 1.0 Agents.qml

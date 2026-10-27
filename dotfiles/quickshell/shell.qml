@@ -1,6 +1,7 @@
 // ~/.config/quickshell/shell.qml — entry point
-// Wires up the TopBar (hover-reveal dashboard). Each component lives in
-// its own file; this just instantiates them.
+// Wires up the two bars — the right-edge bezel bar (EdgeBar, which also owns
+// its panels) and the top media notch (TopBar) — plus the overlays. Each
+// component lives in its own file; this just instantiates them.
 //
 // The lock screen is NOT handled by Quickshell — it's hyprlock, fired
 // only by the Mod+L keybind in niri. Quickshell's WlSessionLock proved
@@ -20,7 +21,7 @@ ShellRoot {
 
     // --- panels (one per output handled inside each component) ---
     Bars.TopBar { }
-    Bars.SideBar { }
+    Bars.EdgeBar { }
 
     // --- overlays --------------------------------------------------------
     // Launchpad-style app grid. Triggered via `qs ipc call launcher toggle`
@@ -31,13 +32,9 @@ ShellRoot {
     // via `qs ipc call power toggle` (wired to Mod+Escape in niri).
     Overlays.PowerFlyout { }
 
-    // Network manager (status / wifi toggle / scan / connect). Triggered via
-    // `qs ipc call network toggle` (wired to the SideBar network button).
-    Overlays.NetworkFlyout { }
-
-    // Bluetooth manager (status / power toggle / scan / connect). Triggered via
-    // `qs ipc call bluetooth toggle` (wired to the SideBar bluetooth button).
-    Overlays.BluetoothFlyout { }
+    // Edge-bar panels (audio, network, bluetooth, calendar, weather, display,
+    // battery, agents, sysmon, updates, menu) open from their bar icons or
+    // `qs ipc call panel toggle <id>`; see services/Panels.qml.
 
     // Volume OSD. Pops up on any volume change; the niri XF86Audio* binds
     // fire `qs ipc call audio show` right after nudging wpctl.
