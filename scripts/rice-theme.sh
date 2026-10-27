@@ -142,7 +142,8 @@ tpl=os.environ['TPL_DIR']
 # hyprlock wants colours as rgba(rrggbbaa) — accent with no '#', opaque alpha.
 render(os.path.join(tpl,'hyprlock.conf.tmpl'), os.environ['HYPRLOCK_CONF'],
        {'@ACCENT_RGBA@': 'rgba(%sff)' % P['accent'].lstrip('#'),
-        '@BASE_RGBA@': 'rgba(%sff)' % P['base'].lstrip('#')})
+        '@BASE_RGBA@': 'rgba(%sff)' % P['base'].lstrip('#'),
+        '@HOME@': os.environ['HOME']})
 render(os.path.join(tpl,'fastfetch-config.jsonc.tmpl'), os.environ['FASTFETCH_CFG'],
        {'@ACCENT_SGR@': sgr(P['accent']), '@CYAN_SGR@': sgr(P['cyan']),
         '@BLUE_SGR@': sgr(P['blue']), '@HOME@': os.environ['HOME']})
@@ -216,6 +217,13 @@ PY
 
     # btop theme written to a tmp file by python; place it (de-symlinking).
     write_real "$BTOP_THEME" < /tmp/.rice-btop-theme && rm -f /tmp/.rice-btop-theme
+
+    # Lock-screen logo (hyprlock image widget) in the new colours. Non-fatal:
+    # without it hyprlock just skips the image.
+    if command -v sanganak-logo >/dev/null 2>&1; then
+        sanganak-logo png "$HOME/.config/hypr/sanganak-logo.png" 320 \
+            "$C1" "$C2" "$C3" "${BASE:-$LEGACY_BASE}" || c_err "logo render failed (lock screen shows no logo)"
+    fi
 
     # mako has no file watch; reload it if it's running.
     command -v makoctl >/dev/null 2>&1 && makoctl reload >/dev/null 2>&1 || true

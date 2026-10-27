@@ -79,10 +79,35 @@ set_key error_fg  "0x01${RED}"      # 0x01 = TB_BOLD
 set_key clock     "%I:%M %p"        # 12-hour, per the rice's 12h-everywhere rule
 set_key asterisk  "0x2022"          # bullet password mask
 
+# ---- 3b) the संगणक chip logo above the login box ---------------------------
+# ly (>= 1.2) can draw a durdraw file as its background "animation"; a single
+# static frame centred, then nudged up so it sits clear of the box. Rendered
+# in the palette by scripts/sanganak-logo.py (stdlib Python, '▀' cells only, so
+# any console font draws it). Only touched when this ly knows dur_file_path —
+# an older ly keeps its current animation setting.
+LOGO_PY="$(dirname "$(readlink -f "$0")")/sanganak-logo.py"
+[[ -f "$LOGO_PY" ]] || LOGO_PY="$(command -v sanganak-logo || true)"
+if grep -qE '^[[:space:]]*#?[[:space:]]*dur_file_path[[:space:]]*=' "$CFG" && [[ -n "$LOGO_PY" ]]; then
+    if python3 "$LOGO_PY" dur /etc/ly/sanganak.dur 32 "$C1" "$C2" "$C3" "#${BG}"; then
+        chmod 644 /etc/ly/sanganak.dur
+        set_key animation            "dur_file"
+        set_key dur_file_path        "/etc/ly/sanganak.dur"
+        set_key dur_offset_alignment "center"
+        set_key dur_x_offset         "0"
+        set_key dur_y_offset         "-14"
+        set_key full_color           "true"     # the logo is 256-colour encoded
+        LOGO_NOTE="  logo=/etc/ly/sanganak.dur"
+    else
+        echo ">> logo render failed — login screen left without a logo" >&2
+    fi
+else
+    echo ">> this ly has no dur_file support — skipping the login logo"
+fi
+
 # ---- 4) stamp the synced palette so rice-theme can detect drift -----------
 # A comment line (ly ignores '#' lines), same marker the boot menu uses.
 sed -i '/^# rice-synced-colors:/d' "$CFG"
 printf '# rice-synced-colors: %s\n' "$C1 $C2 $C3 $C4${BASE:+ $BASE}" >> "$CFG"
 
-echo ">> ly themed:  bg=0x00$BG  fg=0x00$FG  border=0x00$ACCENT  error=0x01$RED  clock=12h"
+echo ">> ly themed:  bg=0x00$BG  fg=0x00$FG  border=0x00$ACCENT  error=0x01$RED  clock=12h${LOGO_NOTE:-}"
 echo ">> takes effect at the next greeter (reboot, or log out of niri)."
