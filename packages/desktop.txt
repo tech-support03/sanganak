@@ -16,7 +16,7 @@ quickshell hyprlock mako swaybg wl-clipboard cliphist brightnessctl playerctl
 mesa vulkan-icd-loader vulkan-radeon vulkan-intel vulkan-swrast
 # terminal + shell
 alacritty zsh zsh-completions zsh-autosuggestions zsh-syntax-highlighting
-neovim fastfetch htop btop fzf ripgrep fd bat eza zoxide jq gum pacman-contrib
+neovim fastfetch htop btop fzf ripgrep fd bat eza zoxide jq gum pacman-contrib reflector
 # look
 ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji papirus-icon-theme adw-gtk-theme
 gtk3 gtk4 libadwaita

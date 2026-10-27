@@ -77,17 +77,26 @@ log "Downloading the offline package set (with every dependency)"
 mkdir -p "$OFFLINE" "$WORK/db"
 # A fresh dbpath makes pacman treat nothing as installed, so -Sw fetches the
 # complete dependency closure rather than only what this host lacks.
+# Official Arch mirrors, whatever this host uses (an Omarchy host points at
+# Omarchy's lagging snapshot mirror). Both the offline repo and the live
+# environment come from these.
+cat > "$WORK/mirrorlist" <<'MIRRORS'
+Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch
+MIRRORS
+sed -i "s|^Include = /etc/pacman.d/mirrorlist|Include = $WORK/mirrorlist|" "$PROFILE_DIR/pacman.conf"
 cat > "$WORK/pacman-build.conf" <<CONF
 [options]
 Architecture = auto
 ParallelDownloads = 8
 SigLevel = Required DatabaseOptional
 [core]
-Include = /etc/pacman.d/mirrorlist
+Include = $WORK/mirrorlist
 [extra]
-Include = /etc/pacman.d/mirrorlist
+Include = $WORK/mirrorlist
 [multilib]
-Include = /etc/pacman.d/mirrorlist
+Include = $WORK/mirrorlist
 CONF
 # Everything iso-stage/03-pacstrap.sh may ask for, across all its branches,
 # plus what the bootloader modules install inside the chroot.

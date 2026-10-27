@@ -89,7 +89,17 @@ pacstrap "${PACSTRAP_ARGS[@]}" /mnt "${BASE_PKGS[@]}"
 log "Generating fstab"
 genfstab -U /mnt >> /mnt/etc/fstab
 
-# Copy the mirrorlist into the new system.
-install -Dm644 /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
+# Copy the mirrorlist into the new system. Offline, the live ISO's list is
+# whatever reflector managed without a network (often all commented out), so
+# seed the official geo / CDN mirrors; Finish setup ranks them once online.
+if [[ -n "${OFFLINE_CONF:-}" ]]; then
+    install -Dm644 /dev/stdin /mnt/etc/pacman.d/mirrorlist <<'MIRRORS'
+Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://fastly.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch
+MIRRORS
+else
+    install -Dm644 /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
+fi
 
 ok "base system installed at /mnt"

@@ -8,6 +8,11 @@
 # vm / laptop / personal), Secure Boot (SSD only, off by default). Wi-Fi is
 # optional: the install itself is offline, and Finish setup asks again after
 # the first login if needed.
+#
+# Unattended: attach a drive (or partition) labelled SANGANAK_AUTO holding
+# sanganak-auto.conf with DISK= USERNAME= PASSWORD= HOSTNAME= TIMEZONE=
+# PROFILE= [SECURE_BOOT=true] and AUTO_CONFIRM=yes. Nothing is asked; the disk
+# named there is erased. (Used by iso/test-vm.sh.)
 set -uo pipefail
 
 REPO=/root/sanganak
@@ -30,6 +35,24 @@ header() {
 }
 abort() { gum style --foreground 1 "$*"; echo; gum confirm "Start over?" && exec "$0"; exit 1; }
 
+# ---- unattended config ------------------------------------------------------
+AUTO=false
+if [[ -e /dev/disk/by-label/SANGANAK_AUTO ]]; then
+    mkdir -p /run/sanganak-auto
+    if mount -o ro /dev/disk/by-label/SANGANAK_AUTO /run/sanganak-auto 2>/dev/null \
+       && [[ -f /run/sanganak-auto/sanganak-auto.conf ]]; then
+        # shellcheck disable=SC1091
+        source /run/sanganak-auto/sanganak-auto.conf
+        umount /run/sanganak-auto
+        [[ "${AUTO_CONFIRM:-}" == yes && -b "${DISK:-}" && -n "${USERNAME:-}" && -n "${PASSWORD:-}" ]] \
+            || abort "sanganak-auto.conf needs DISK (a disk), USERNAME, PASSWORD and AUTO_CONFIRM=yes."
+        AUTO=true
+        PASS1="$PASSWORD"; HOSTNAME_="${HOSTNAME:-sanganak}"; TIMEZONE="${TIMEZONE:-UTC}"
+        PROFILE="${PROFILE:-vm}"; SECURE_BOOT="${SECURE_BOOT:-false}"; FORCE_WIN=false
+    fi
+fi
+
+if ! $AUTO; then
 # ---- disk -------------------------------------------------------------------
 header "Pick the disk to install on. Everything on it is erased."
 mapfile -t disks < <(lsblk -dpno NAME,SIZE,MODEL,TRAN,TYPE | awk '$NF=="disk"' | grep -Ev 'loop|sr[0-9]|zram' \
@@ -91,6 +114,8 @@ if [[ -d /sys/firmware/efi && "$removable" != 1 && "$tran" != usb && "$PROFILE" 
     gum confirm --default=false "Set up Secure Boot?" && SECURE_BOOT=true
 fi
 
+fi  # interactive questions
+
 # ---- confirm -----------------------------------------------------------------------
 header "Ready to install"
 gum style --border rounded --border-foreground "$ACCENT" --padding "1 2" \
@@ -104,7 +129,7 @@ gum style --border rounded --border-foreground "$ACCENT" --padding "1 2" \
     "The desktop installs from this USB (no internet needed)." \
     "Apps, gaming and AUR packages install on your first login."
 echo
-gum confirm --default=false "Erase $DISK and install?" || abort "Nothing was changed."
+$AUTO || gum confirm --default=false "Erase $DISK and install?" || abort "Nothing was changed."
 
 # ---- install ------------------------------------------------------------------------
 header "Installing — this takes a few minutes"
@@ -118,7 +143,7 @@ if env OFFLINE_CONF="$OFFLINE_CONF" WALLPAPER_SRC="$([[ -d $WALLPAPERS ]] && ech
     echo
     gum style --bold --foreground 2 "Installed. Remove the USB stick when the screen goes dark."
     [[ $SECURE_BOOT == true ]] && gum style --faint "After the first boot: put the firmware in Setup Mode and run 'sudo sb-finalize'."
-    gum confirm "Reboot now?" && systemctl reboot
+    if $AUTO; then systemctl poweroff; else gum confirm "Reboot now?" && systemctl reboot; fi
 else
     echo
     gum style --foreground 1 "The install failed. The full log is $LOG."
