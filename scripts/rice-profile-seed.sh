@@ -6,7 +6,7 @@
 #     ...  rice.profile=full       → full profile
 #     (absent)                     → keep an existing choice, else default full
 #
-# This is what makes the MacBook's GRUB entry ("driftOS — light") come up light
+# This is what makes the MacBook's GRUB entry ("sanganak — light") come up light
 # automatically while the laptop's "full" entry comes up full, with no manual
 # step on first boot. After that, `rice-profile` (Mod+Shift+P) overrides live
 # and persists, and a later boot WITHOUT rice.profile= on the cmdline respects

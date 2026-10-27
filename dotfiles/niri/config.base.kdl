@@ -12,7 +12,7 @@ include "monitor.kdl"
 // error ("duplicate node `layout`"). So those whole blocks, plus the per-app
 // window translucency rules, live in the profile fragment, never here.
 //
-// Niri Wayland compositor — driftos.
+// Niri Wayland compositor — sanganak.
 // PROFILE-AWARE: both `personal` and `vm` monitor blocks are present;
 //                Niri ignores `output` blocks that don't match a connected name,
 //                so the same file is valid on both targets.

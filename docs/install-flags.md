@@ -1,6 +1,6 @@
 # Install flags reference
 
-driftos has two installer modes, dispatched by a single entry point
+sanganak has two installer modes, dispatched by a single entry point
 (`install.sh`). Which mode runs is detected automatically:
 
 - **Bootstrap mode** — `install.sh` is run from inside the Arch ISO live
@@ -92,7 +92,7 @@ From the Arch ISO:
 ```bash
 ./install.sh --disk /dev/nvme0n1 \
              --user you \
-             --hostname driftos-laptop \
+             --hostname sanganak-laptop \
              --profile laptop \
              --target ssd \
              --secure-boot \
@@ -116,7 +116,7 @@ cd ~/arch-setup
 ```bash
 ./install.sh --disk /dev/nvme0n1 \
              --user you \
-             --hostname driftos \
+             --hostname sanganak \
              --profile personal \
              --secure-boot \
              --yes
@@ -158,7 +158,7 @@ Combine flags + environment variables to skip every prompt:
 ```bash
 USER_PASSWORD='hunter2' ROOT_PASSWORD='hunter2' \
 ./install.sh --disk /dev/nvme0n1 \
-             --user you --hostname driftos \
+             --user you --hostname sanganak \
              --profile personal --secure-boot --yes
 ```
 

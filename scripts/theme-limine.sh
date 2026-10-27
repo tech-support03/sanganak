@@ -5,7 +5,7 @@
 #
 #     sudo scripts/theme-limine.sh                 # derive from ~/.config/rice/colors
 #     sudo scripts/theme-limine.sh c1 c2 c3 c4     # explicit #rrggbb palette
-#     sudo LIMINE_BRANDING="driftOS" scripts/theme-limine.sh
+#     sudo LIMINE_BRANDING="sanganak" scripts/theme-limine.sh
 #
 # Why a separate, root, opt-in command (and NOT part of `rice-theme set`):
 #   Live theme cycling (Mod+Shift+T) is user-level and passwordless. The boot

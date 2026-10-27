@@ -150,7 +150,7 @@ fi
 # ---- first-login hint ------------------------------------------------------
 install -Dm644 /dev/stdin /etc/motd <<EOF
 ─────────────────────────────────────────────────────────────────────
-  Welcome to driftos. To finish setup, run:
+  Welcome to sanganak. To finish setup, run:
 
       cd ~/arch-setup
       ./install.sh --profile $PROFILE

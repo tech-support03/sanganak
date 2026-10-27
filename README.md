@@ -1,4 +1,4 @@
-# driftos
+# sanganak
 
 A complete, opinionated Arch Linux rice for the [Niri](https://github.com/YaLTeR/niri)
 scrollable-tiling Wayland compositor. Dark-mode only, translucent surfaces,
@@ -64,21 +64,21 @@ Boot the official Arch ISO in **UEFI mode**. At the live prompt (as `root`):
 iwctl
 
 pacman -Sy --noconfirm git
-git clone https://github.com/tech-support03/driftos.git ~/arch-setup
+git clone https://github.com/tech-support03/sanganak.git ~/arch-setup
 cd ~/arch-setup
 
 # interactive — prompts for disk, user, passwords
 ./install.sh
 
 # or fully unattended with Secure Boot
-./install.sh --disk /dev/nvme0n1 --user arjun --hostname driftos \
+./install.sh --disk /dev/nvme0n1 --user arjun --hostname sanganak \
              --timezone America/New_York --profile personal --secure-boot --yes
 ```
 
 ### From an already-installed system (rice only)
 
 ```bash
-git clone https://github.com/tech-support03/driftos.git ~/arch-setup
+git clone https://github.com/tech-support03/sanganak.git ~/arch-setup
 cd ~/arch-setup
 ./install.sh --profile personal   # same script — detects it's NOT on the ISO
 ```
@@ -101,7 +101,7 @@ which systemd services get enabled.
 **Laptop install example** — just the internal display, full power management:
 
 ```bash
-./install.sh --disk /dev/nvme0n1 --user you --hostname driftos-laptop \
+./install.sh --disk /dev/nvme0n1 --user you --hostname sanganak-laptop \
              --profile laptop --target ssd --secure-boot --yes
 ```
 
@@ -230,7 +230,7 @@ them via `boot():/`.
 
 1. Plug in a fast USB 3.x stick or USB-NVMe enclosure (≥ 16 GiB).
 2. Boot the Arch ISO in UEFI mode (laptop firmware boot menu → ISO USB).
-3. `pacman -Sy --noconfirm git && git clone https://github.com/tech-support03/driftos.git ~/arch-setup`
+3. `pacman -Sy --noconfirm git && git clone https://github.com/tech-support03/sanganak.git ~/arch-setup`
 4. `cd ~/arch-setup && ./install.sh --disk /dev/sdX --user you --profile laptop --target usb`
    — **double-check** the disk path; on most laptops the internal SSD is
    `/dev/nvme0n1` and the USB is `/dev/sda` or similar. Verify with

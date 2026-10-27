@@ -9,7 +9,7 @@
 # Usage (all flags optional; missing values are prompted):
 #   sudo ./bootstrap.sh \
 #       --disk /dev/nvme0n1 \
-#       --hostname driftos \
+#       --hostname sanganak \
 #       --user arjun \
 #       --timezone America/New_York \
 #       --profile personal \
@@ -33,7 +33,7 @@ export ROOT_DIR STAGE_DIR MODULES_DIR DOTFILES_DIR SCRIPTS_DIR
 
 # ---- defaults / args -------------------------------------------------------
 # NB: do NOT name these `HOSTNAME` or `USER` — bash auto-populates those from
-# the running shell's identity, so `${HOSTNAME:-driftos}` would read "archiso"
+# the running shell's identity, so `${HOSTNAME:-sanganak}` would read "archiso"
 # from the live ISO and silently skip every default/prompt. Use TARGET_* names
 # to keep the live-env environment out of our config.
 DISK="${DISK:-}"
@@ -230,7 +230,7 @@ fi
 other_disks="$(lsblk -dpno NAME,SIZE,MODEL,TRAN | grep -Ev 'loop|sr0|rom' | awk -v d="$DISK" '$1!=d {print}')"
 
 prompt_default TARGET_USERNAME "Username" "arjun"
-prompt_default TARGET_HOSTNAME "Hostname" "driftos"
+prompt_default TARGET_HOSTNAME "Hostname" "sanganak"
 prompt_default TIMEZONE "Timezone (e.g. America/New_York)" "$TIMEZONE"
 
 prompt_password USER_PASSWORD "Password for $TARGET_USERNAME"

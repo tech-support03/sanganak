@@ -64,7 +64,7 @@ sudo install -d -m700 "$MOKDIR"
 if [[ ! -f "$MOKDIR/MOK.key" ]]; then
     log "Generating Machine Owner Key (MOK)"
     sudo openssl req -newkey rsa:2048 -nodes -keyout "$MOKDIR/MOK.key" \
-        -new -x509 -sha256 -days 3650 -subj "/CN=driftOS USB MOK/" \
+        -new -x509 -sha256 -days 3650 -subj "/CN=sanganak USB MOK/" \
         -out "$MOKDIR/MOK.crt"
     sudo openssl x509 -outform DER -in "$MOKDIR/MOK.crt" -out "$MOKDIR/MOK.der"
 fi
@@ -131,11 +131,11 @@ insmod gfxterm
 terminal_output gfxterm
 search --no-floppy --fs-uuid --set=root $ESP_UUID
 
-menuentry "driftOS — full rice (laptop / desktop)" {
+menuentry "sanganak — full rice (laptop / desktop)" {
     linux  /vmlinuz-linux root=UUID=$ROOT_UUID rw quiet loglevel=3 rice.profile=full
     initrd$UCODE /initramfs-linux.img
 }
-menuentry "driftOS — light (4GB / MacBook Air)" {
+menuentry "sanganak — light (4GB / MacBook Air)" {
     linux  /vmlinuz-linux root=UUID=$ROOT_UUID rw quiet loglevel=3 rice.profile=light
     initrd$UCODE /initramfs-linux.img
 }
@@ -189,9 +189,9 @@ if [[ -d /sys/firmware/efi/efivars ]]; then
     if [[ "$ESP_SRC" =~ ^(/dev/.*[a-z])p?([0-9]+)$ ]]; then
         ESP_DISK="${BASH_REMATCH[1]}"; ESP_PART="${BASH_REMATCH[2]}"
         [[ "$ESP_DISK" =~ p$ ]] && ESP_DISK="${ESP_DISK%p}"
-        if ! efibootmgr 2>/dev/null | sed -n 's/^Boot[0-9A-Fa-f]\{4\}\*\? //p' | cut -f1 | grep -qxF "driftOS USB"; then
+        if ! efibootmgr 2>/dev/null | sed -n 's/^Boot[0-9A-Fa-f]\{4\}\*\? //p' | cut -f1 | grep -qxF "sanganak USB"; then
             sudo efibootmgr --create --disk "$ESP_DISK" --part "$ESP_PART" \
-                --label "driftOS USB" --loader '\EFI\BOOT\BOOTX64.EFI' \
+                --label "sanganak USB" --loader '\EFI\BOOT\BOOTX64.EFI' \
                 || warn "efibootmgr entry failed; removable fallback path still boots"
         fi
     fi

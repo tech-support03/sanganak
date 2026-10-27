@@ -39,7 +39,7 @@ until you `save` them** (or click-create in the picker).
    `Theme.qml` watches this file (a `FileView`, same pattern as the `Profile`
    singleton) and re-derives every token **live — no restart**.
 2. Derives all shades and **generates** the configs that can't watch a file:
-   - `~/.config/btop/themes/driftos.theme` (emitted by the script)
+   - `~/.config/btop/themes/sanganak.theme` (emitted by the script)
    - `~/.config/hypr/hyprlock.conf` (from `dotfiles/rice/templates/hyprlock.conf.tmpl`)
    - `~/.config/fastfetch/config.jsonc` (from `…/fastfetch-config.jsonc.tmpl`)
    - `~/.config/rice/colors.sh` — shell vars the **zsh prompt** sources

@@ -89,7 +89,7 @@ aur_build shim-signed --install
 # into a cache dir and pacman -U'd inside the chroot by bootstrap.sh.
 AUR_PKG_CACHE=""
 if [[ "$WITH_MACBOOK_WIFI" == "true" ]]; then
-    AUR_PKG_CACHE="$(mktemp -d /tmp/driftos-aur.XXXXXX)"
+    AUR_PKG_CACHE="$(mktemp -d /tmp/sanganak-aur.XXXXXX)"
     chown "$SUDO_USER":"$SUDO_USER" "$AUR_PKG_CACHE"
     aur_build broadcom-wl-dkms
 fi
