@@ -214,7 +214,7 @@ Scope {
                 clip: true
 
                 // Transparent in waveform mode so bars appear to float
-                color: win.mode === 1 ? "transparent" : Qt.rgba(0.05, 0.055, 0.08, 0.97)
+                color: win.mode === 1 ? "transparent" : Theme.tint(Theme.base, 0.97)
                 bottomLeftRadius: 22
                 bottomRightRadius: 22
                 border.width: win.mode === 2 ? 1 : 0

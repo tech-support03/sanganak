@@ -104,7 +104,7 @@ Scope {
 
         Rectangle {
             anchors.fill: parent
-            color: Qt.rgba(0.04, 0.04, 0.06, 0.55)
+            color: Theme.tint(Theme.baseDeep, 0.55)
             opacity: scope.active ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: Theme.animMed; easing.type: Easing.OutQuad } }
             MouseArea { anchors.fill: parent; onClicked: scope.close() }
@@ -124,7 +124,7 @@ Scope {
                 width: 360
                 implicitHeight: col.implicitHeight + 28
                 radius: Theme.radius
-                color: Qt.rgba(0.110, 0.110, 0.133, 0.55)
+                color: Theme.tint(Theme.baseRaised, 0.55)
                 border.color: Theme.line
                 border.width: 1
                 scale: scope.active ? 1.0 : 0.94
@@ -187,7 +187,7 @@ Scope {
                                     id: plabel
                                     anchors.centerIn: parent
                                     text: pill.modelData.label
-                                    color: pill.sel ? "#0b0b12" : Theme.fg1
+                                    color: pill.sel ? Theme.base : Theme.fg1
                                     font.family: Theme.fontSans
                                     font.pixelSize: 12
                                     font.weight: pill.sel ? Font.DemiBold : Font.Normal

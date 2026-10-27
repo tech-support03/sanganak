@@ -26,7 +26,7 @@ Rectangle {
     width: 150 * ui
     height: col.implicitHeight + 24 * ui
 
-    color: Qt.rgba(0.06, 0.07, 0.10, 0.96)
+    color: Theme.tint(Theme.base, 0.96)
     radius: 16
     border.color: Qt.rgba(1, 1, 1, 0.07)
     border.width: 1

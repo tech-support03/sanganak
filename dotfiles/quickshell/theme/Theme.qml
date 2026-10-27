@@ -7,12 +7,14 @@
 // semantic tokens below (Theme.accent, Theme.blue, …) and NEVER hardcode a hex,
 // or they won't follow a theme change.
 //
-// File format of ~/.config/rice/colors: four lines, one #rrggbb each, in order
+// File format of ~/.config/rice/colors: four or five lines, one #rrggbb each:
 //   c1 = accent / hero
 //   c2 = blue
 //   c3 = cyan
 //   c4 = teal
-// Missing/invalid file ⇒ the built-in "indigo" defaults below.
+//   base (optional) = the near-black every bar / panel / flyout is built on
+// Missing/invalid file ⇒ the built-in "deccan" defaults below. A 4-line file
+// (themes without base=) gets the legacy neutral base.
 pragma Singleton
 
 import QtQuick
@@ -22,11 +24,20 @@ import Quickshell.Io
 QtObject {
     id: theme
 
-    // --- base palette (defaults = the built-in "indigo" theme) -------------
-    property color c1: "#5b6ee0"   // accent / hero
-    property color c2: "#60a5fa"   // blue
-    property color c3: "#22d3ee"   // cyan
-    property color c4: "#2dd4bf"   // teal
+    // --- base palette (defaults = the built-in "deccan" theme) -------------
+    property color c1: "#f0522d"   // accent / hero   (Golden Gate orange)
+    property color c2: "#dfe5eb"   // blue slot       (Bay fog)
+    property color c3: "#39d98a"   // cyan slot       (terminal green)
+    property color c4: "#9fb4c7"   // teal slot       (fog shadow)
+    property color base: "#111215" // surface base    (Deccan black)
+    readonly property color legacyBase: "#0f1016"   // for 4-colour themes
+
+    // --- surface shades, all derived from base (bind to THESE) -------------
+    readonly property color baseRaised: Qt.lighter(base, 1.35)  // cards inside panels
+    readonly property color baseDeep:   Qt.darker(base, 1.40)   // scrims, launcher veil
+
+    // c with alpha a — keeps translucent fills on-theme (Theme.tint(Theme.base, 0.94)).
+    function tint(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 
     // --- semantic accents (bind to THESE, not c1..c4) ----------------------
     readonly property color accent:       c1
@@ -53,8 +64,8 @@ QtObject {
 
     // --- translucency ------------------------------------------------------
     readonly property real  alpha:    0.32
-    readonly property color surface:  Qt.rgba(0.086, 0.086, 0.110, alpha)
-    readonly property color surface2: Qt.rgba(0.110, 0.110, 0.133, alpha + 0.18)
+    readonly property color surface:  tint(base, alpha)
+    readonly property color surface2: tint(baseRaised, alpha + 0.18)
     readonly property color surface3: Qt.rgba(1,1,1,0.05)
     readonly property int   blur:     32
 
@@ -84,6 +95,7 @@ QtObject {
         if (hexes.length > 1) theme.c2 = hexes[1];
         if (hexes.length > 2) theme.c3 = hexes[2];
         if (hexes.length > 3) theme.c4 = hexes[3];
+        theme.base = hexes.length > 4 ? hexes[4] : theme.legacyBase;
     }
 
     property FileView _file: FileView {
@@ -91,6 +103,6 @@ QtObject {
         watchChanges: true
         onFileChanged: reload()
         onLoaded:     theme._apply(text())
-        // onLoadFailed intentionally omitted ⇒ keep the indigo defaults.
+        // onLoadFailed intentionally omitted ⇒ keep the deccan defaults.
     }
 }

@@ -1,5 +1,10 @@
 # ~/.config/alacritty/alacritty.toml
 
+# Background follows the rice theme base: `rice-theme` writes this file and
+# alacritty live-reloads it. Settings below override anything imported.
+[general]
+import = ["~/.config/rice/alacritty-colors.toml"]
+
 [font]
 normal = { family = "JetBrainsMono Nerd Font", style = "Regular" }
 size = 11.0
@@ -13,7 +18,6 @@ decorations = "None"
 style = { shape = "Beam", blinking = "On" }
 
 [colors.primary]
-background = "#12131a"
 foreground = "#f5f6fa"
 
 [colors.normal]

@@ -6,11 +6,13 @@
 #   rice-theme set <name>        apply a saved theme
 #   rice-theme apply-colors c1 c2 c3 c4   apply 4 colours LIVE, without saving
 #   rice-theme next              cycle to the next saved theme (+ notification)
-#   rice-theme create <name> c1 c2 c3 c4   write a new theme from 4 colours
+#   rice-theme create <name> c1 c2 c3 c4 [base]   write a new theme (base optional)
 #   rice-theme save <name>       snapshot the CURRENT live palette as <name>
 #   rice-theme apply             re-apply the active theme (used at boot)
 #
-# A "theme" is four colours (c1=accent/hero, c2=blue, c3=cyan, c4=teal). Every
+# A "theme" is four colours (c1=accent/hero, c2=blue, c3=cyan, c4=teal) plus an
+# optional base= (the near-black every bar/panel/notification/terminal sits on;
+# themes without it keep the legacy neutral #0f1016). Every
 # other shade — bright/dim/muted accents, the album-art tint, btop's gradients —
 # is DERIVED here, so you only ever choose four. Design mirrors `rice-profile`:
 #   • Quickshell reads ~/.config/rice/colors LIVE (Theme.qml FileView) → no restart.
@@ -28,6 +30,10 @@ COLORS_SH="$RICE_DIR/colors.sh"    # shell vars — ~/.zshrc sources this for th
 BTOP_THEME="$HOME/.config/btop/themes/driftos.theme"
 HYPRLOCK_CONF="$HOME/.config/hypr/hyprlock.conf"
 FASTFETCH_CFG="$HOME/.config/fastfetch/config.jsonc"
+MAKO_CFG="$HOME/.config/mako/config"
+ALACRITTY_COLORS="$RICE_DIR/alacritty-colors.toml"   # imported by alacritty.toml
+LEGACY_BASE="#0f1016"
+DEFAULT_THEME="deccan"
 
 c_info() { printf '\033[34m::\033[0m %s\n' "$*"; }
 c_err()  { printf '\033[31mrice-theme:\033[0m %s\n' "$*" >&2; }
@@ -37,16 +43,18 @@ die()    { c_err "$*"; exit 1; }
 load_theme_file() {
     local f="$1" k v
     [[ -r "$f" ]] || die "no such theme: $f"
-    TNAME="$(basename "$f" .theme)"; C1=""; C2=""; C3=""; C4=""
+    TNAME="$(basename "$f" .theme)"; C1=""; C2=""; C3=""; C4=""; BASE=""
     while IFS='=' read -r k v; do
         k="${k// /}"; v="${v// /}"
         case "$k" in
             name) TNAME="$v" ;;
             c1) C1="$v" ;; c2) C2="$v" ;; c3) C3="$v" ;; c4) C4="$v" ;;
+            base) BASE="$v" ;;
         esac
     done < <(grep -vE '^\s*#|^\s*$' "$f")
     [[ "$C1$C2$C3$C4" =~ ^(#[0-9a-fA-F]{6}){4}$ ]] || \
         die "theme '$TNAME' must define 4 hex colours c1..c4 (got: $C1 $C2 $C3 $C4)"
+    [[ -z "$BASE" || "$BASE" =~ ^#[0-9a-fA-F]{6}$ ]] || die "theme '$TNAME': base must be #rrggbb (got: $BASE)"
 }
 
 # Replace a possible symlink target with a real file (never write through the
@@ -65,7 +73,7 @@ active_name() { [[ -r "$ACTIVE_FILE" ]] && tr -d ' \n' < "$ACTIVE_FILE" || echo 
 # never touches those files.
 surfaces_sync_reminder() {
     local cur stamp name file cmd drift=()
-    cur="$(echo "$C1 $C2 $C3 $C4" | tr 'A-Z' 'a-z')"
+    cur="$(echo "$C1 $C2 $C3 $C4${BASE:+ $BASE}" | tr 'A-Z' 'a-z')"
     while IFS='|' read -r name file cmd; do
         [[ -r "$file" ]] || continue
         stamp="$(sed -n 's/^# rice-synced-colors:[[:space:]]*//p' "$file" | tr 'A-Z' 'a-z')"
@@ -86,13 +94,15 @@ themes_list() { find "$THEMES_DIR" -maxdepth 1 -name '*.theme' -printf '%f\n' 2>
 # ---- the core: apply C1..C4 everywhere --------------------------------------
 apply_palette() {
     mkdir -p "$RICE_DIR"
-    # 1) Quickshell — live via Theme.qml's FileView. Four hex lines, c1..c4.
+    # 1) Quickshell — live via Theme.qml's FileView. c1..c4, then base if set.
     printf '%s\n%s\n%s\n%s\n' "$C1" "$C2" "$C3" "$C4" > "$COLORS_FILE"
+    [[ -n "${BASE:-}" ]] && printf '%s\n' "$BASE" >> "$COLORS_FILE"
 
     # 2) Everything that can't watch a file: derive shades + render in Python.
-    C1="$C1" C2="$C2" C3="$C3" C4="$C4" \
+    C1="$C1" C2="$C2" C3="$C3" C4="$C4" BASE="${BASE:-$LEGACY_BASE}" \
     TPL_DIR="$TPL_DIR" BTOP_THEME="$BTOP_THEME" HYPRLOCK_CONF="$HYPRLOCK_CONF" \
     FASTFETCH_CFG="$FASTFETCH_CFG" COLORS_SH="$COLORS_SH" \
+    MAKO_CFG="$MAKO_CFG" ALACRITTY_COLORS="$ALACRITTY_COLORS" \
     python3 - "$@" <<'PY'
 import os, colorsys, re
 
@@ -111,7 +121,8 @@ def darker(h,f):
 def sgr(h): r,g,b=hex2rgb(h); return "38;2;%d;%d;%d"%(r,g,b)
 
 c1=os.environ['C1']; c2=os.environ['C2']; c3=os.environ['C3']; c4=os.environ['C4']
-P=dict(
+base=os.environ['BASE']
+P=dict(base=base, base_raised=lighter(base,1.35),
     accent=c1, accent_bright=lighter(c1,1.30), accent_dim=darker(c1,1.45),
     accent_muted=darker(c1,1.95), surface_tint=darker(c1,4.20),
     blue=c2, blue_bright=lighter(c2,1.30), cyan=c3, teal=c4,
@@ -130,9 +141,21 @@ def render(tpl, dst, repl):
 tpl=os.environ['TPL_DIR']
 # hyprlock wants colours as rgba(rrggbbaa) — accent with no '#', opaque alpha.
 render(os.path.join(tpl,'hyprlock.conf.tmpl'), os.environ['HYPRLOCK_CONF'],
-       {'@ACCENT_RGBA@': 'rgba(%sff)' % P['accent'].lstrip('#')})
+       {'@ACCENT_RGBA@': 'rgba(%sff)' % P['accent'].lstrip('#'),
+        '@BASE_RGBA@': 'rgba(%sff)' % P['base'].lstrip('#')})
 render(os.path.join(tpl,'fastfetch-config.jsonc.tmpl'), os.environ['FASTFETCH_CFG'],
-       {'@ACCENT_SGR@': sgr(P['accent']), '@CYAN_SGR@': sgr(P['cyan'])})
+       {'@ACCENT_SGR@': sgr(P['accent']), '@CYAN_SGR@': sgr(P['cyan']),
+        '@BLUE_SGR@': sgr(P['blue']), '@HOME@': os.environ['HOME']})
+# mako: notifications sit on the theme base (translucent), accent progress bar.
+render(os.path.join(tpl,'mako-config.tmpl'), os.environ['MAKO_CFG'],
+       {'@BASE@': P['base'], '@ACCENT@': P['accent']})
+
+# alacritty: only the background follows the theme (the ANSI palette is NOT
+# themed, CLAUDE.md §13). alacritty.toml imports this file and live-reloads it.
+d=os.path.dirname(os.environ['ALACRITTY_COLORS']); os.makedirs(d, exist_ok=True)
+with open(os.environ['ALACRITTY_COLORS'],'w') as f:
+    f.write("# generated by rice-theme — imported by alacritty.toml\n"
+            "[colors.primary]\nbackground = \"%s\"\n" % P['base'])
 
 # --- btop driftos.theme: emit the whole thing (it's all colour) -------------
 def ramp(base, lo=1.7, hi=1.30): return (darker(base,lo), darker(base,1.18), base) if hi==1.30 else (darker(base,lo), base, lighter(base,hi))
@@ -143,10 +166,10 @@ theme[main_fg]="#f4f4f6"
 theme[title]="#f4f4f6"
 theme[hi_fg]="{P['accent']}"
 theme[selected_bg]="{P['accent']}"
-theme[selected_fg]="#12131a"
+theme[selected_fg]="{P['base']}"
 theme[inactive_fg]="#5e5e66"
 theme[graph_text]="#f4f4f6"
-theme[meter_bg]="#23232c"
+theme[meter_bg]="{P['base_raised']}"
 theme[proc_misc]="{P['accent']}"
 theme[cpu_box]="{P['accent']}"
 theme[mem_box]="{P['blue']}"
@@ -193,6 +216,9 @@ PY
 
     # btop theme written to a tmp file by python; place it (de-symlinking).
     write_real "$BTOP_THEME" < /tmp/.rice-btop-theme && rm -f /tmp/.rice-btop-theme
+
+    # mako has no file watch; reload it if it's running.
+    command -v makoctl >/dev/null 2>&1 && makoctl reload >/dev/null 2>&1 || true
 }
 
 # ---- subcommands ------------------------------------------------------------
@@ -201,7 +227,7 @@ cmd_set() {
     load_theme_file "$THEMES_DIR/$name.theme"
     apply_palette
     echo "$TNAME" > "$ACTIVE_FILE"
-    c_info "theme → $TNAME ($C1 $C2 $C3 $C4)"
+    c_info "theme → $TNAME ($C1 $C2 $C3 $C4${BASE:+ base $BASE})"
 }
 
 cmd_next() {
@@ -217,8 +243,9 @@ cmd_next() {
 }
 
 cmd_create() {
-    local name="$1" c1="$2" c2="$3" c3="$4" c4="$5"
+    local name="$1" c1="$2" c2="$3" c3="$4" c4="$5" base="${6:-}"
     [[ "$c1$c2$c3$c4" =~ ^(#[0-9a-fA-F]{6}){4}$ ]] || die "need 4 #rrggbb colours"
+    [[ -z "$base" || "$base" =~ ^#[0-9a-fA-F]{6}$ ]] || die "base must be #rrggbb"
     mkdir -p "$THEMES_DIR"
     cat > "$THEMES_DIR/$name.theme" <<EOF
 # rice theme — c1=accent/hero c2=blue c3=cyan c4=teal (shades derived by rice-theme)
@@ -228,6 +255,7 @@ c2=$c2
 c3=$c3
 c4=$c4
 EOF
+    [[ -n "$base" ]] && echo "base=$base" >> "$THEMES_DIR/$name.theme"
     c_info "created theme '$name'"
 }
 
@@ -236,7 +264,7 @@ cmd_save() {  # snapshot current live palette under a new name
     [[ -r "$COLORS_FILE" ]] || die "no live palette yet — run 'rice-theme set <name>' first"
     mapfile -t L < <(grep -oE '#[0-9a-fA-F]{6}' "$COLORS_FILE")
     [[ ${#L[@]} -ge 4 ]] || die "live palette incomplete"
-    cmd_create "$name" "${L[0]}" "${L[1]}" "${L[2]}" "${L[3]}"
+    cmd_create "$name" "${L[0]}" "${L[1]}" "${L[2]}" "${L[3]}" "${L[4]:-}"
 }
 
 cmd_list() {
@@ -254,16 +282,17 @@ main() {
         list)   cmd_list ;;
         set)    [[ $# -ge 1 ]] || die "usage: rice-theme set <name>"; cmd_set "$1"; surfaces_sync_reminder ;;
         apply-colors)  # apply 4 colours LIVE without saving a named theme
-                [[ $# -eq 4 ]] || die "usage: rice-theme apply-colors c1 c2 c3 c4"
+                [[ $# -eq 4 || $# -eq 5 ]] || die "usage: rice-theme apply-colors c1 c2 c3 c4 [base]"
                 [[ "$1$2$3$4" =~ ^(#[0-9a-fA-F]{6}){4}$ ]] || die "need 4 #rrggbb colours"
-                C1="$1" C2="$2" C3="$3" C4="$4"; apply_palette
+                [[ -z "${5:-}" || "$5" =~ ^#[0-9a-fA-F]{6}$ ]] || die "base must be #rrggbb"
+                C1="$1" C2="$2" C3="$3" C4="$4" BASE="${5:-}"; apply_palette
                 echo "custom" > "$ACTIVE_FILE"
                 c_info "applied custom palette (NOT saved — 'rice-theme save <name>' to keep it)"
                 surfaces_sync_reminder ;;
         next)   cmd_next; surfaces_sync_reminder ;;
-        create) [[ $# -eq 5 ]] || die "usage: rice-theme create <name> c1 c2 c3 c4"; cmd_create "$@" ;;
+        create) [[ $# -eq 5 || $# -eq 6 ]] || die "usage: rice-theme create <name> c1 c2 c3 c4 [base]"; cmd_create "$@" ;;
         save)   [[ $# -ge 1 ]] || die "usage: rice-theme save <name>"; cmd_save "$1" ;;
-        apply)  local a; a="$(active_name)"; [[ -n "$a" ]] || a="indigo"; cmd_set "$a" ;;
+        apply)  local a; a="$(active_name)"; [[ -n "$a" ]] || a="$DEFAULT_THEME"; cmd_set "$a" ;;
         *) die "unknown command: $cmd (try: status|list|set|next|create|save|apply)" ;;
     esac
 }

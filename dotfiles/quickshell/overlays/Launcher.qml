@@ -144,7 +144,7 @@ Scope {
         Rectangle {
             id: dim
             anchors.fill: parent
-            color: Qt.rgba(0.04, 0.04, 0.06, 0.84)
+            color: Theme.tint(Theme.baseDeep, 0.84)
             opacity: scope.active ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
 
@@ -301,8 +301,8 @@ Scope {
                             radius: 20
                             visible: !tile.hasIcon
                             gradient: Gradient {
-                                GradientStop { position: 0.0; color: Qt.rgba(0.77, 0.70, 1.0, 0.22) }
-                                GradientStop { position: 1.0; color: Qt.rgba(0.77, 0.70, 1.0, 0.10) }
+                                GradientStop { position: 0.0; color: Theme.tint(Theme.accent, 0.22) }
+                                GradientStop { position: 1.0; color: Theme.tint(Theme.accent, 0.10) }
                             }
                             border.width: 1
                             border.color: Qt.rgba(1, 1, 1, 0.10)
@@ -312,7 +312,7 @@ Scope {
                                 text: (tile.modelData && tile.modelData.name)
                                     ? tile.modelData.name.charAt(0).toUpperCase()
                                     : "?"
-                                color: "#e7e1ff"
+                                color: Theme.accentBright
                                 font.family: Theme.fontSans
                                 font.pixelSize: 36
                                 font.weight: Font.DemiBold

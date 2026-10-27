@@ -525,19 +525,31 @@ QML. Every transition, every hover state, every flyout — animated.
 ## 13. Theming — `rice-theme` (4-colour palettes)
 
 Colour is driven by **four colours** (`c1` accent/hero, `c2` blue, `c3` cyan,
-`c4` teal); all other shades are derived. Same generate-and-reload spirit as
+`c4` teal) plus an optional **`base`** — the near-black every bar, panel,
+flyout, notification, terminal, lock and login background is built on (themes
+without it keep the legacy `#0f1016`). All other shades are derived. Same generate-and-reload spirit as
 `rice-profile`:
 
 - **Quickshell** binds to `Theme.<token>` in `dotfiles/quickshell/Theme.qml`,
   which reads `~/.config/rice/colors` **live** (FileView) → re-themes with no
   restart. **Never hardcode a themed hex in QML** — add/use a `Theme` token.
-- **btop / hyprlock / fastfetch / zsh** can't watch a file, so `rice-theme`
-  **generates** them from `dotfiles/rice/templates/*` (btop emitted inline)
-  into `~/.config` on each switch. hyprlock wants `rgba(rrggbbaa)`, so its
-  template uses the `@ACCENT_RGBA@` token (vs `@ACCENT@`/`@ACCENT_SGR@`).
-- `rice-theme list|status|set <name>|next|apply-colors c1..c4|save <name>|
-  create <name> c1..c4`. **Mod+T** = Quickshell picker overlay; **Mod+Shift+T**
-  = cycle. Theme **#1 is `indigo`** (`#5b6ee0 #60a5fa #22d3ee #2dd4bf`).
+  Dark fills use `Theme.tint(Theme.base | baseRaised | baseDeep, alpha)`.
+- **btop / hyprlock / fastfetch / mako / zsh / alacritty's background** can't
+  watch a file, so `rice-theme` **generates** them from
+  `dotfiles/rice/templates/*` (btop and `~/.config/rice/alacritty-colors.toml`
+  emitted inline) into `~/.config` on each switch. hyprlock wants
+  `rgba(rrggbbaa)`, so its template uses `@ACCENT_RGBA@` / `@BASE_RGBA@`.
+  mako's config is generated (not linked) and `makoctl reload`ed.
+- `rice-theme list|status|set <name>|next|apply-colors c1..c4 [base]|save <name>|
+  create <name> c1..c4 [base]`. **Mod+T** = Quickshell picker overlay;
+  **Mod+Shift+T** = cycle. The default is **`deccan`** (Deccan Gate:
+  `#f0522d #dfe5eb #39d98a #9fb4c7`, base `#111215`); the original `indigo`
+  (`#5b6ee0 #60a5fa #22d3ee #2dd4bf`) still ships.
+- **Logo:** the संगणक chip mark (Sahyadri ridge on a chip) is
+  `quickshell/theme/ChipLogo.qml` (sidebar launcher) and
+  `dotfiles/fastfetch/sanganak-logo.txt` (fastfetch); both take theme colours.
+  ly and Limine are root-owned and resync on demand (`sudo scripts/theme-ly.sh`,
+  `sudo scripts/theme-limine.sh`); both use `base` for their background.
 - New palettes are **live-only until `save`d** (explicit). App-brand and
   semantic (`#f43f5e`) colours and alacritty's ANSI palette are **not** themed.
 

@@ -91,7 +91,7 @@ Scope {
         Rectangle {
             id: dim
             anchors.fill: parent
-            color: Qt.rgba(0.04, 0.04, 0.06, 0.55)
+            color: Theme.tint(Theme.baseDeep, 0.55)
             opacity: scope.active ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutQuad } }
 
@@ -121,7 +121,7 @@ Scope {
                 width: 320
                 implicitHeight: list.implicitHeight + 28
                 radius: 18
-                color: Qt.rgba(0.110, 0.110, 0.133, 0.50)
+                color: Theme.tint(Theme.baseRaised, 0.50)
                 border.color: Qt.rgba(1, 1, 1, 0.09)
                 border.width: 1
                 scale: scope.active ? 1.0 : 0.94
@@ -149,7 +149,7 @@ Scope {
 
                             color: row.sel
                                    ? (row.dangerous ? Qt.rgba(0.91, 0.46, 0.46, 0.18)
-                                                    : Qt.rgba(0.77, 0.70, 1.0, 0.18))
+                                                    : Theme.tint(Theme.accent, 0.18))
                                    : (hh.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
                             Behavior on color { ColorAnimation { duration: 180 } }
 

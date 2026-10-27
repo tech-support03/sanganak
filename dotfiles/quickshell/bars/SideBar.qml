@@ -131,7 +131,7 @@ Scope {
                 width: root.sidebarW
                 height: parent.height - 2 * root.edgeGap
                 // Opaque in the light profile (no translucency to composite).
-                color: Qt.rgba(0.055, 0.058, 0.082, Services.Profile.light ? 1.0 : 0.78)
+                color: Theme.tint(Theme.base, Services.Profile.light ? 1.0 : 0.78)
                 radius: 22
                 border.color: Qt.rgba(1, 1, 1, 0.05)
                 border.width: 1
@@ -147,9 +147,12 @@ Scope {
                     width: parent.width - 12
 
                     IconButton {
-                        glyph: "\uF303"   // arch logo
-                        tint: Theme.accent
+                        id: logoBtn       // sanganak chip mark (theme/ChipLogo.qml)
                         onActivated: root.launchShell("fastfetch-popup")
+                        ChipLogo {
+                            anchors.centerIn: parent
+                            size: 30 * logoBtn.ui
+                        }
                     }
 
                     // Per-output workspace dots

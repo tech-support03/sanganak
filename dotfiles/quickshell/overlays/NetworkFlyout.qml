@@ -107,7 +107,7 @@ Scope {
         Rectangle {
             id: dim
             anchors.fill: parent
-            color: Qt.rgba(0.04, 0.04, 0.06, 0.55)
+            color: Theme.tint(Theme.baseDeep, 0.55)
             opacity: scope.active ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutQuad } }
             MouseArea { anchors.fill: parent; onClicked: scope.close() }
@@ -131,7 +131,7 @@ Scope {
                 width: 380
                 height: Math.min(560, body.implicitHeight + 28)
                 radius: 18
-                color: Qt.rgba(0.075, 0.078, 0.102, 0.94)
+                color: Theme.tint(Theme.base, 0.94)
                 border.color: Qt.rgba(1, 1, 1, 0.09)
                 border.width: 1
                 scale: scope.active ? 1.0 : 0.95
@@ -151,7 +151,7 @@ Scope {
                         Rectangle {
                             id: hIcon
                             width: 44; height: 44; radius: 13
-                            color: scope.net.connected ? Qt.rgba(0.65, 0.85, 1.0, 0.16)
+                            color: scope.net.connected ? Theme.tint(Theme.blue, 0.16)
                                                         : Qt.rgba(1, 1, 1, 0.05)
                             Text {
                                 anchors.centerIn: parent
@@ -213,7 +213,7 @@ Scope {
                             anchors.leftMargin: 54
                             anchors.verticalCenter: parent.verticalCenter
                             width: 40; height: 22; radius: 11
-                            color: scope.net.wifiEnabled ? Qt.rgba(0.65, 0.85, 1.0, 0.55)
+                            color: scope.net.wifiEnabled ? Theme.tint(Theme.blue, 0.55)
                                                           : Qt.rgba(1, 1, 1, 0.10)
                             Behavior on color { ColorAnimation { duration: 180 } }
                             Rectangle {
@@ -294,7 +294,7 @@ Scope {
                             anchors.leftMargin: 70
                             anchors.verticalCenter: parent.verticalCenter
                             width: 40; height: 22; radius: 11
-                            color: scope.net.ethernetEnabled ? Qt.rgba(0.65, 0.85, 1.0, 0.55)
+                            color: scope.net.ethernetEnabled ? Theme.tint(Theme.blue, 0.55)
                                                              : Qt.rgba(1, 1, 1, 0.10)
                             Behavior on color { ColorAnimation { duration: 180 } }
                             Rectangle {
@@ -353,7 +353,7 @@ Scope {
                                         height: 46
                                         radius: 11
                                         color: row.modelData.active
-                                               ? Qt.rgba(0.65, 0.85, 1.0, 0.14)
+                                               ? Theme.tint(Theme.blue, 0.14)
                                                : (rh.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
                                         Behavior on color { ColorAnimation { duration: 160 } }
 
@@ -419,7 +419,7 @@ Scope {
                                             anchors.rightMargin: 4
                                             radius: 10
                                             color: Qt.rgba(1, 1, 1, 0.05)
-                                            border.color: pwField.activeFocus ? Qt.rgba(0.65, 0.85, 1.0, 0.5)
+                                            border.color: pwField.activeFocus ? Theme.tint(Theme.blue, 0.5)
                                                                               : Qt.rgba(1, 1, 1, 0.08)
                                             border.width: 1
 
@@ -453,8 +453,8 @@ Scope {
                                                 anchors.rightMargin: 4
                                                 anchors.verticalCenter: parent.verticalCenter
                                                 width: 28; height: 28; radius: 8
-                                                color: goHover.hovered ? Qt.rgba(0.65, 0.85, 1.0, 0.30)
-                                                                       : Qt.rgba(0.65, 0.85, 1.0, 0.18)
+                                                color: goHover.hovered ? Theme.tint(Theme.blue, 0.30)
+                                                                       : Theme.tint(Theme.blue, 0.18)
                                                 Behavior on color { ColorAnimation { duration: 140 } }
                                                 Text {
                                                     anchors.centerIn: parent

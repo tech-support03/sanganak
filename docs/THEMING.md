@@ -24,8 +24,11 @@ rice-theme status               # active theme name
 | **Mod+T** | open the Quickshell theme picker (swatch menu) |
 | **Mod+Shift+T** | cycle to the next saved theme (+ notification) |
 
-Themes live in `~/.config/rice/themes/*.theme` (4 colours each). **Theme #1 is
-`indigo`** — the palette the rice shipped with. New palettes are **live-only
+Themes live in `~/.config/rice/themes/*.theme` (4 colours each, plus an
+optional `base=` — the near-black behind every bar, panel, notification,
+terminal, lock and login screen). The default is **`deccan`** (Deccan Gate:
+`#f0522d #dfe5eb #39d98a #9fb4c7`, base `#111215`); **`indigo`** is the palette
+the rice originally shipped with. New palettes are **live-only
 until you `save` them** (or click-create in the picker).
 
 ## How it works

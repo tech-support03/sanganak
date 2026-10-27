@@ -68,9 +68,9 @@ link "$DOTFILES_DIR/zsh/.zshrc"                 "$HOME/.zshrc"
 link "$DOTFILES_DIR/fontconfig/fonts.conf"      "$HOME/.config/fontconfig/fonts.conf"
 link "$DOTFILES_DIR/gtk-3.0/settings.ini"       "$HOME/.config/gtk-3.0/settings.ini"
 link "$DOTFILES_DIR/gtk-4.0/settings.ini"       "$HOME/.config/gtk-4.0/settings.ini"
-link "$DOTFILES_DIR/mako/config"                "$HOME/.config/mako/config"
 link "$DOTFILES_DIR/cava/config"                "$HOME/.config/cava/config"
 link "$DOTFILES_DIR/fastfetch/config.jsonc"     "$HOME/.config/fastfetch/config.jsonc"
+link "$DOTFILES_DIR/fastfetch/sanganak-logo.txt" "$HOME/.config/fastfetch/sanganak-logo.txt"
 link "$DOTFILES_DIR/btop/btop.conf"              "$HOME/.config/btop/btop.conf"
 link "$DOTFILES_DIR/btop/themes/driftos.theme"   "$HOME/.config/btop/themes/driftos.theme"
 
@@ -82,9 +82,11 @@ link "$DOTFILES_DIR/btop/themes/driftos.theme"   "$HOME/.config/btop/themes/drif
 # /etc/pam.d/hyprlock (auth include login) and fingerprint goes direct to fprintd.
 
 # Theming engine: templates are read by `rice-theme` to regenerate btop/hyprlock/
-# fastfetch on a theme switch; themes are user data (4-colour palettes) so they
-# are COPIED (not symlinked) — `rice-theme create/save` writes new ones here
-# without touching the repo. The current "indigo" palette ships as theme #1.
+# fastfetch/mako/alacritty-colors on a theme switch (mako's config is GENERATED
+# like hyprlock's, so it is not linked). Themes are user data (4 colours + an
+# optional base) so they are COPIED (not symlinked) — `rice-theme create/save`
+# writes new ones here without touching the repo. "deccan" is the default;
+# "indigo" (the original look) still ships.
 link "$DOTFILES_DIR/rice/templates"              "$HOME/.config/rice/templates"
 mkdir -p "$HOME/.config/rice/themes"
 cp -n "$DOTFILES_DIR"/rice/themes/*.theme        "$HOME/.config/rice/themes/" 2>/dev/null || true
@@ -134,13 +136,13 @@ log "Generating niri config.kdl via rice-profile"
 ok "niri config.kdl generated (profile: $("$HOME/.local/bin/rice-profile" status))"
 
 # Generate the themed configs (btop/hyprlock/fastfetch + the live Quickshell
-# palette + zsh colours) from the active theme. Defaults to "indigo" (theme #1)
+# palette + zsh colours) from the active theme. Defaults to "deccan"
 # unless a previous install already chose one. This also de-symlinks the
 # fastfetch/btop-theme files seeded above and writes ~/.config/hypr/hyprlock.conf.
 log "Applying rice theme (generates themed configs)"
 RICE_ACTIVE="$("$HOME/.local/bin/rice-theme" status 2>/dev/null || true)"
-"$HOME/.local/bin/rice-theme" set "${RICE_ACTIVE:-indigo}" \
-    || warn "rice-theme apply failed; run 'rice-theme set indigo' after install"
+"$HOME/.local/bin/rice-theme" set "${RICE_ACTIVE:-deccan}" \
+    || warn "rice-theme apply failed; run 'rice-theme set deccan' after install"
 ok "rice theme applied (theme: $("$HOME/.local/bin/rice-theme" status))"
 
 # Fail loudly if the linked niri config doesn't parse on the installed niri

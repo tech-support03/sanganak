@@ -34,28 +34,32 @@ gen=/usr/local/bin/limine-regen-conf
 [[ -f "$gen" ]] || { echo "ERROR: $gen missing" >&2; exit 1; }
 
 # ---- 1) resolve the 4 palette colours -------------------------------------
-# Priority: explicit args > the invoking user's rice palette > indigo default.
-if [[ $# -eq 4 ]]; then
-    C1="$1" C2="$2" C3="$3" C4="$4"
+# Priority: explicit args > the invoking user's rice palette > deccan default.
+# An optional 5th colour is the theme's base (bar/panel black); without it the
+# background is derived from the accent as before.
+BASE=""
+if [[ $# -eq 4 || $# -eq 5 ]]; then
+    C1="$1" C2="$2" C3="$3" C4="$4" BASE="${5:-}"
 else
     USER_HOME="$(getent passwd "${SUDO_USER:-root}" | cut -d: -f6)"
     COLORS="$USER_HOME/.config/rice/colors"
     if [[ -r "$COLORS" ]]; then
         mapfile -t _c < <(grep -oE '#[0-9a-fA-F]{6}' "$COLORS")
-        C1="${_c[0]:-#5b6ee0}" C2="${_c[1]:-#60a5fa}" C3="${_c[2]:-#22d3ee}" C4="${_c[3]:-#2dd4bf}"
+        C1="${_c[0]:-#f0522d}" C2="${_c[1]:-#dfe5eb}" C3="${_c[2]:-#39d98a}" C4="${_c[3]:-#9fb4c7}" BASE="${_c[4]:-}"
         echo ">> palette from $COLORS"
     else
-        C1="#5b6ee0" C2="#60a5fa" C3="#22d3ee" C4="#2dd4bf"
-        echo ">> no rice palette found — using indigo default"
+        C1="#f0522d" C2="#dfe5eb" C3="#39d98a" C4="#9fb4c7" BASE="#111215"
+        echo ">> no rice palette found — using deccan default"
     fi
 fi
 [[ "$C1$C2$C3$C4" =~ ^(#[0-9a-fA-F]{6}){4}$ ]] || { echo "ERROR: need 4 #rrggbb colours (got: $C1 $C2 $C3 $C4)" >&2; exit 1; }
+[[ -z "$BASE" || "$BASE" =~ ^#[0-9a-fA-F]{6}$ ]] || { echo "ERROR: base must be #rrggbb (got: $BASE)" >&2; exit 1; }
 
 BRANDING="${LIMINE_BRANDING:-Arch Linux}"
 
 # ---- 2) derive shades + write /etc/limine-theme.conf ----------------------
 # Same lighter/darker model as rice-theme so the boot menu tracks the palette.
-C1="$C1" C2="$C2" C3="$C3" C4="$C4" BRANDING="$BRANDING" python3 - <<'PY'
+C1="$C1" C2="$C2" C3="$C3" C4="$C4" BASE="$BASE" BRANDING="$BRANDING" python3 - <<'PY'
 import os, colorsys
 def hx(h): h=h.lstrip('#'); return tuple(int(h[i:i+2],16) for i in (0,2,4))
 def hex6(r): return '%02x%02x%02x' % tuple(max(0,min(255,round(x))) for x in r)
@@ -72,8 +76,10 @@ def darker(h,f):
 c1,c2,c3,c4 = (os.environ[k] for k in ('C1','C2','C3','C4'))
 # bg: very dark, slightly accent-tinted (keeps the indigo cast Omarchy gets from
 # Tokyo Night's 1a1b26). Derived from the accent so it shifts with the palette.
-bg        = darker(c1, 6.5)
-bg_bright = darker(c1, 3.2)
+base      = os.environ.get('BASE','')
+# A theme base (bar/panel black) wins; otherwise derive from the accent.
+bg        = base.lstrip('#') if base else darker(c1, 6.5)
+bg_bright = lighter(base, 1.6) if base else darker(c1, 3.2)
 black     = darker(c1, 2.4)          # palette[0]
 black_br  = lighter(black, 1.35)
 acc_br    = lighter(c1, 1.30)
@@ -91,7 +97,7 @@ conf = f"""# /etc/limine-theme.conf — colours + branding for the Limine boot m
 # Sourced by /usr/local/bin/limine-emit-theme. Bare RRGGBB hex (NO leading '#').
 # The line below records the rice palette this menu was built from so rice-theme
 # can detect drift and remind you to resync. (A comment — ignored when sourced.)
-# rice-synced-colors: {c1} {c2} {c3} {c4}
+# rice-synced-colors: {c1} {c2} {c3} {c4}{(' ' + base) if base else ''}
 LIMINE_BRANDING="{os.environ['BRANDING']}"
 LIMINE_BRANDING_COLOUR="{acc_br}"
 LIMINE_HELP_COLOUR="{help_c}"

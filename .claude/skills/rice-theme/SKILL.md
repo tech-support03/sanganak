@@ -49,8 +49,10 @@ placeholder), `blueBright`.
 - **Mod+T** — Quickshell picker overlay (swatch menu)
 - `rice-theme status` — active theme name
 
-Theme **#1 is `indigo`** — the palette the rice shipped with
-(`#5b6ee0 #60a5fa #22d3ee #2dd4bf`).
+The default theme is **`deccan`** (`#f0522d #dfe5eb #39d98a #9fb4c7`,
+`base=#111215`); **`indigo`** (`#5b6ee0 #60a5fa #22d3ee #2dd4bf`) is the
+original. A theme may add `base=#rrggbb` (5th arg to `create`/`apply-colors`):
+the black every bar/panel/notification/terminal/lock/login sits on.
 
 ## How it reaches each surface (so you know what to check)
 

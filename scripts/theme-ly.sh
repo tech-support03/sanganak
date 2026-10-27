@@ -26,26 +26,31 @@ CFG=/etc/ly/config.ini
 [[ -f "$CFG" ]] || { echo "ERROR: $CFG missing — is ly installed?" >&2; exit 1; }
 
 # ---- 1) resolve the 4 palette colours -------------------------------------
-# Priority: explicit args > the invoking user's rice palette > indigo default.
-if [[ $# -eq 4 ]]; then
-    C1="$1" C2="$2" C3="$3" C4="$4"
+# Priority: explicit args > the invoking user's rice palette > deccan default.
+# An optional 5th colour is the theme's base (bar/panel black); without it the
+# background is derived from the accent as before.
+BASE=""
+if [[ $# -eq 4 || $# -eq 5 ]]; then
+    C1="$1" C2="$2" C3="$3" C4="$4" BASE="${5:-}"
 else
     USER_HOME="$(getent passwd "${SUDO_USER:-root}" | cut -d: -f6)"
     COLORS="$USER_HOME/.config/rice/colors"
     if [[ -r "$COLORS" ]]; then
         mapfile -t _c < <(grep -oE '#[0-9a-fA-F]{6}' "$COLORS")
-        C1="${_c[0]:-#5b6ee0}" C2="${_c[1]:-#60a5fa}" C3="${_c[2]:-#22d3ee}" C4="${_c[3]:-#2dd4bf}"
+        C1="${_c[0]:-#f0522d}" C2="${_c[1]:-#dfe5eb}" C3="${_c[2]:-#39d98a}" C4="${_c[3]:-#9fb4c7}" BASE="${_c[4]:-}"
         echo ">> palette from $COLORS"
     else
-        C1="#5b6ee0" C2="#60a5fa" C3="#22d3ee" C4="#2dd4bf"
-        echo ">> no rice palette found — using indigo default"
+        C1="#f0522d" C2="#dfe5eb" C3="#39d98a" C4="#9fb4c7" BASE="#111215"
+        echo ">> no rice palette found — using deccan default"
     fi
 fi
 [[ "$C1$C2$C3$C4" =~ ^(#[0-9a-fA-F]{6}){4}$ ]] || { echo "ERROR: need 4 #rrggbb colours (got: $C1 $C2 $C3 $C4)" >&2; exit 1; }
+[[ -z "$BASE" || "$BASE" =~ ^#[0-9a-fA-F]{6}$ ]] || { echo "ERROR: base must be #rrggbb (got: $BASE)" >&2; exit 1; }
 
 # ---- 2) derive the dark, accent-tinted background -------------------------
 # Same darker(accent, 6.5) model as scripts/theme-limine.sh, so the login
 # background matches the boot menu's.
+if [[ -n "$BASE" ]]; then BG="${BASE#\#}"; else
 BG="$(python3 - "$C1" <<'PY'
 import sys, colorsys
 h=sys.argv[1].lstrip('#'); r,g,b=[int(h[i:i+2],16)/255 for i in (0,2,4)]
@@ -53,7 +58,7 @@ hue,s,v=colorsys.rgb_to_hsv(r,g,b)
 r,g,b=colorsys.hsv_to_rgb(hue,s,v/6.5)
 print('%02x%02x%02x'%tuple(max(0,min(255,round(x*255))) for x in (r,g,b)))
 PY
-)"
+)"; fi
 ACCENT="${C1#\#}"      # box border = accent
 FG="f4f4f6"            # light text for legibility
 RED="f43f5e"           # semantic error — NOT themed (CLAUDE.md §13)
@@ -77,7 +82,7 @@ set_key asterisk  "0x2022"          # bullet password mask
 # ---- 4) stamp the synced palette so rice-theme can detect drift -----------
 # A comment line (ly ignores '#' lines), same marker the boot menu uses.
 sed -i '/^# rice-synced-colors:/d' "$CFG"
-printf '# rice-synced-colors: %s %s %s %s\n' "$C1" "$C2" "$C3" "$C4" >> "$CFG"
+printf '# rice-synced-colors: %s\n' "$C1 $C2 $C3 $C4${BASE:+ $BASE}" >> "$CFG"
 
 echo ">> ly themed:  bg=0x00$BG  fg=0x00$FG  border=0x00$ACCENT  error=0x01$RED  clock=12h"
 echo ">> takes effect at the next greeter (reboot, or log out of niri)."

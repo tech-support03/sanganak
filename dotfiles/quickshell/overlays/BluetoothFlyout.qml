@@ -90,7 +90,7 @@ Scope {
         Rectangle {
             id: dim
             anchors.fill: parent
-            color: Qt.rgba(0.04, 0.04, 0.06, 0.55)
+            color: Theme.tint(Theme.baseDeep, 0.55)
             opacity: scope.active ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutQuad } }
             MouseArea { anchors.fill: parent; onClicked: scope.close() }
@@ -114,7 +114,7 @@ Scope {
                 width: 380
                 height: Math.min(560, body.implicitHeight + 28)
                 radius: 18
-                color: Qt.rgba(0.075, 0.078, 0.102, 0.94)
+                color: Theme.tint(Theme.base, 0.94)
                 border.color: Qt.rgba(1, 1, 1, 0.09)
                 border.width: 1
                 scale: scope.active ? 1.0 : 0.95
@@ -134,7 +134,7 @@ Scope {
                         Rectangle {
                             id: hIcon
                             width: 44; height: 44; radius: 13
-                            color: scope.bt.connectedCount > 0 ? Qt.rgba(0.65, 0.85, 1.0, 0.16)
+                            color: scope.bt.connectedCount > 0 ? Theme.tint(Theme.blue, 0.16)
                                                                : Qt.rgba(1, 1, 1, 0.05)
                             Text {
                                 anchors.centerIn: parent
@@ -196,7 +196,7 @@ Scope {
                             anchors.leftMargin: 80
                             anchors.verticalCenter: parent.verticalCenter
                             width: 40; height: 22; radius: 11
-                            color: scope.bt.powered ? Qt.rgba(0.65, 0.85, 1.0, 0.55)
+                            color: scope.bt.powered ? Theme.tint(Theme.blue, 0.55)
                                                     : Qt.rgba(1, 1, 1, 0.10)
                             Behavior on color { ColorAnimation { duration: 180 } }
                             Rectangle {
@@ -280,7 +280,7 @@ Scope {
                                     height: 46
                                     radius: 11
                                     color: row.modelData.connected
-                                           ? Qt.rgba(0.65, 0.85, 1.0, 0.14)
+                                           ? Theme.tint(Theme.blue, 0.14)
                                            : (rh.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
                                     Behavior on color { ColorAnimation { duration: 160 } }
 

@@ -156,7 +156,7 @@ Item {
         width: root.popoverWidth
         height: popoverCol.implicitHeight + 28
         radius: 18
-        color: Qt.rgba(0.06, 0.07, 0.10, 0.96)
+        color: Theme.tint(Theme.base, 0.96)
         border.color: Qt.rgba(1, 1, 1, 0.07)
         border.width: 1
 

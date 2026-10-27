@@ -85,7 +85,7 @@ Scope {
 
         Rectangle {
             anchors.fill: parent
-            color: Qt.rgba(0.04, 0.04, 0.06, 0.55)
+            color: Theme.tint(Theme.baseDeep, 0.55)
             opacity: scope.active ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutQuad } }
             MouseArea { anchors.fill: parent; onClicked: scope.close() }
@@ -110,7 +110,7 @@ Scope {
                 width: 320
                 implicitHeight: col.implicitHeight + 28
                 radius: 18
-                color: Qt.rgba(0.110, 0.110, 0.133, 0.50)
+                color: Theme.tint(Theme.baseRaised, 0.50)
                 border.color: Qt.rgba(1, 1, 1, 0.09)
                 border.width: 1
                 scale: scope.active ? 1.0 : 0.94
@@ -145,7 +145,7 @@ Scope {
                             readonly property bool isActive: modelData.name === scope.activeName
                             readonly property bool sel: scope.selected === row.index
 
-                            color: row.sel ? Qt.rgba(0.36, 0.43, 0.88, 0.18)
+                            color: row.sel ? Theme.tint(Theme.accent, 0.18)
                                            : (hh.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
                             Behavior on color { ColorAnimation { duration: 180 } }
                             scale: ma.pressed ? 0.97 : 1.0

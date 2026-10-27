@@ -1,0 +1,11 @@
+# rice theme — "Deccan Gate" (दख्खन), the default.
+# Silicon Valley × Sahyadri: Golden Gate orange, Bay fog, terminal green, on
+# Deccan black. c1 = accent / hero   c2 = blue slot   c3 = cyan slot
+# c4 = teal slot   base = the black every bar / panel / notification / terminal
+# / lock / login screen sits on. Shades are derived by `rice-theme`.
+name=deccan
+c1=#f0522d
+c2=#dfe5eb
+c3=#39d98a
+c4=#9fb4c7
+base=#111215
