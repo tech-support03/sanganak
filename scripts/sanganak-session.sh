@@ -17,6 +17,8 @@ if [[ "$virt" != none ]]; then
 fi
 
 if [[ -n "$no_3d" ]]; then
+    # ly sends a session's stdout to its log; the user has to see this.
+    exec >/dev/tty 2>&1
     clear
     cat <<MSG
 
