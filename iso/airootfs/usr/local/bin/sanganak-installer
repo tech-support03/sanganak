@@ -117,6 +117,14 @@ fi
 
 fi  # interactive questions
 
+# ---- VM without 3D: the install works, the desktop won't until 3D is on ------
+VM_NOTE=""
+if [[ "$(systemd-detect-virt 2>/dev/null)" != none ]]; then
+    if ! compgen -G '/dev/dri/renderD*' >/dev/null || dmesg 2>/dev/null | grep -q 'features: -virgl'; then
+        VM_NOTE="This VM has no 3D acceleration. niri needs it: turn it on in the VM's display settings before the first login."
+    fi
+fi
+
 # ---- confirm -----------------------------------------------------------------------
 header "Ready to install"
 gum style --border rounded --border-foreground "$ACCENT" --padding "1 2" \
@@ -129,6 +137,7 @@ gum style --border rounded --border-foreground "$ACCENT" --padding "1 2" \
     "" \
     "The desktop installs from this USB (no internet needed)." \
     "Apps, gaming and AUR packages install on your first login."
+[[ -n "$VM_NOTE" ]] && gum style --foreground 3 "  $VM_NOTE"
 echo
 $AUTO || gum confirm --default=false "Erase $DISK and install?" || abort "Nothing was changed."
 

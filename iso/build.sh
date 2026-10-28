@@ -136,6 +136,13 @@ if [[ -n "$WALLPAPERS" ]]; then
     find "$WALLPAPERS" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
         -exec cp {} "$PROFILE_DIR/airootfs/root/sanganak-wallpapers/" \;
 fi
+# mkarchiso resets airootfs modes to 644 unless profiledef lists them, which
+# made every script in the bundled repo non-executable (theme-ly.sh "command
+# not found" during the chroot stage). List each executable.
+while IFS= read -r -d '' f; do
+    printf 'file_permissions+=(["/root/sanganak/%s"]="0:0:755")\n' "${f#./}" >> "$PROFILE_DIR/profiledef.sh"
+done < <(cd "$PROFILE_DIR/airootfs/root/sanganak" && find . -type f -perm -u+x -print0)
+
 install -d "$PROFILE_DIR/airootfs/usr/share/sanganak"
 python3 -I "$REPO/scripts/sanganak-logo.py" ansi "$PROFILE_DIR/airootfs/usr/share/sanganak/logo.ansi" 32 \
     "#f0522d" "#dfe5eb" "#39d98a" "#111215"

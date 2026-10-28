@@ -370,6 +370,12 @@ if [[ -n "${OFFLINE_CONF:-}" ]]; then
     rm -rf /mnt/var/tmp/sanganak-wallpapers
 fi
 
+# DNS: a static resolv.conf (CLAUDE.md §Networking). Written from outside the
+# chroot: arch-chroot bind-mounts the live ISO's resolv.conf over the target's,
+# so a write from inside lands on the ISO and the installed system has none.
+rm -f /mnt/etc/resolv.conf
+printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /mnt/etc/resolv.conf
+
 log "Syncing and unmounting"
 sync
 umount -R /mnt || warn "some mounts didn't unmount cleanly; check manually"

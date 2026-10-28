@@ -50,7 +50,7 @@ source "$REPO/modules/lib.sh"
 
 clear
 [[ -f "$HOME/.config/fastfetch/sanganak-logo.ansi" ]] && cat "$HOME/.config/fastfetch/sanganak-logo.ansi"
-printf '\n  %sसंगणक — finish setup%s\n' "$bold" "$off"
+printf '\n  %ssanganak — finish setup%s\n' "$bold" "$off"
 printf '  %sApps, gaming, AUR packages and a full update. This needs the internet and takes a while.%s\n' "$dim" "$off"
 
 # ---- 1. online -----------------------------------------------------------
@@ -77,13 +77,15 @@ pick_wifi() {
 
 step "Getting online"
 until online; do
-    choice="$(gum choose --header "You're offline. Connect to continue (this re-checks on its own)." \
-              "Connect to Wi-Fi" "I plugged in a cable — check again" "Skip for now")" || choice="Skip for now"
+    # --timeout returns to the online check every few seconds, so a cable
+    # plugged in (or a slow DHCP) carries on without a key press.
+    choice="$(gum choose --timeout 6s --header "You're offline. Connect to continue (this re-checks on its own)." \
+              "Connect to Wi-Fi" "I plugged in a cable — check again" "Skip for now")" || choice="recheck"
     case "$choice" in
         "Connect to Wi-Fi") pick_wifi || true
                             for _ in $(seq 1 15); do online && break; sleep 1; done ;;
         "Skip for now")     printf '\nFinish setup will open again at your next login.\n'; read -rsn1 -p 'Press any key to close.'; exit 0 ;;
-        *)                  sleep 2 ;;
+        *)                  sleep 1 ;;
     esac
 done
 echo "Online."

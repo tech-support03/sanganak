@@ -14,7 +14,8 @@ Panel {
     title: net.primaryType === "ethernet" ? "Ethernet" : net.primaryType === "wifi" ? net.primaryName : "Offline"
     subtitle: net.connected ? (net.localIp || "connected") : (net.wifiEnabled ? "not connected" : "wi-fi off")
     glyph: net.glyph
-    showSwitch: true
+    // The Wi-Fi radio switch and list only exist with a Wi-Fi adapter.
+    showSwitch: net.wifiPresent
     switchOn: net.wifiEnabled
     onSwitchToggled: net.toggleWifi()
 
@@ -44,9 +45,9 @@ Panel {
         onClicked: p.net.toggleEthernet()
     }
 
-    SectionLabel { text: "Wi-Fi networks"; value: p.net.scanning ? "scanning…" : ""; visible: p.net.wifiEnabled }
+    SectionLabel { text: "Wi-Fi networks"; value: p.net.scanning ? "scanning…" : ""; visible: p.net.wifiPresent && p.net.wifiEnabled }
     Repeater {
-        model: p.net.wifiEnabled ? p.net.networks : []
+        model: p.net.wifiPresent && p.net.wifiEnabled ? p.net.networks : []
         Column {
             required property var modelData
             width: parent.width
@@ -85,6 +86,7 @@ Panel {
     }
     Text {
         width: parent.width
+        visible: p.net.wifiPresent
         text: "Right-click a saved network to forget it."
         color: Theme.fg3
         font.family: Theme.fontSans

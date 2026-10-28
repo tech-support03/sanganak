@@ -25,7 +25,9 @@ if [[ "${FIRMWARE:-uefi}" == uefi ]]; then
               -drive if=pflash,format=raw,file="$VM_DIR/vars.fd")
 fi
 if [[ "${GL:-1}" == 1 ]]; then
-    display=(-device virtio-vga-gl -display egl-headless)
+    # A visible GTK window: with egl-headless, screendump only ever returns
+    # the pre-KMS frame, so the GL session is captured from the window.
+    display=(-device virtio-vga-gl -display gtk,gl=on,show-menubar=off)
 else
     display=(-device virtio-vga -display none)
 fi
@@ -67,8 +69,13 @@ CONF
         ;;
     shot)
         out="${2:?usage: test-vm.sh shot FILE.png}"
-        monitor "screendump $VM_DIR/shot.ppm"
-        sleep 1; magick "$VM_DIR/shot.ppm" "$out"
+        if [[ "${GL:-1}" == 1 ]] && command -v hyprctl >/dev/null; then
+            geo="$(hyprctl clients -j | jq -r '.[] | select(.class|test("qemu";"i")) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"' | head -n1)"
+            grim -g "$geo" "$out"
+        else
+            monitor "screendump $VM_DIR/shot.ppm"
+            sleep 1; magick "$VM_DIR/shot.ppm" "$out"
+        fi
         ;;
     keys)
         shift

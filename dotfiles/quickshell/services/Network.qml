@@ -57,6 +57,7 @@ QtObject {
     // ---- iwd topology (discovered each poll) --------------------------------
     property string _wifiDev:     "wlan0"  // station device name, for iwctl
     property string _stationPath: ""        // DBus path of the station device
+    readonly property bool wifiPresent: _stationPath !== ""   // an iwd station (Wi-Fi adapter) exists
     property var    _rssiByPath:  ({})      // network object path -> rssi (dBm*100)
     property string _ethDev:      ""        // wired device name, for networkctl
 
