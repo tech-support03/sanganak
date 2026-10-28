@@ -1,31 +1,35 @@
 # sanganak
 
-A complete, opinionated Arch Linux rice for the [Niri](https://github.com/YaLTeR/niri)
-scrollable-tiling Wayland compositor. Dark-mode only, translucent surfaces,
-animated everything. Built around [Quickshell](https://quickshell.outfoxxed.me/)
-for the bars, launcher, and power flyout.
-
-![Top-bar dashboard expanded — clock, calendar, media, weather](docs/screenshots/top-bar-dashboard.jpeg)
+संगणक — a complete, opinionated Arch Linux rice for the
+[Niri](https://github.com/YaLTeR/niri) scrollable-tiling Wayland compositor.
+Dark-mode only, animated everything, the Deccan Gate palette and the chip
+logo. Built around [Quickshell](https://quickshell.outfoxxed.me/) for the bars,
+panels, launcher and power flyout, and installed from its own ISO.
 
 ---
 
 ## What you get
 
 - **Niri** compositor with custom keybinds and slightly springy window/workspace animations
-- **Quickshell**-driven UI: hover-reveal top bar dashboard, vertical 72px side bar,
-  Launchpad-style launcher, translucent power flyout
+- **Quickshell**-driven UI: a right-edge bezel bar that slides out of the screen
+  edge (pin it with a click) with panels for audio, network, bluetooth, calendar,
+  weather, display, battery, AI-agent usage, system and updates; a top media
+  notch; Launchpad-style launcher; power flyout
+- **Omarchy-style tools**: fuzzy package install (repo + AUR) and removal, a
+  full-system update TUI, a keybinding list read from the live niri config
+  (`Super+K`), and the sanganak menu (`Super+Alt+Space`)
+- **Gaming**: Steam, gamescope, gamemode, MangoHud and 32-bit Vulkan, with niri
+  rules that open gamescope / Forza fullscreen and opaque
 - **hyprlock** lock screen (fingerprint *or* password, in parallel) with a pre-blurred copy of the live wallpaper
 - **mako** notifications, **cava**-driven waveform in the top bar when music plays
 - **kanshi** display profiles (vm / personal / laptop) auto-applied by `systemd --user`
 - **ly** TUI greeter on tty1 — no GUI display-manager dependency
 - **Limine + sbctl Secure Boot** option with an atomic re-sign pacman hook,
   or plain **GRUB** for VMs / simplicity
-- One-shot installer that works either from the Arch ISO (bare-metal install)
-  or from an already-booted user session (rice-only mode)
-
-| Default desktop | System monitor popover |
-| --- | --- |
-| ![Default desktop with fastfetch](docs/screenshots/desktop.jpeg) | ![Side bar with sysmon popover](docs/screenshots/sidebar-sysmon.png) |
+- **The sanganak ISO** (Omarchy-ISO style): the core desktop installs offline
+  from the USB; apps, gaming and AUR packages install on first login
+  (**Finish setup**). The scripted installer also still works from the plain
+  Arch ISO or an already-booted system.
 
 ---
 
@@ -54,6 +58,24 @@ minimal — every package earns its place.
 ---
 
 ## Quick start
+
+### From the sanganak ISO (recommended)
+
+```bash
+sudo iso/build.sh                      # from a checkout, on any Arch system (needs archiso)
+# → out/sanganak-YYYY.MM.DD-x86_64.iso — write it to a USB stick (dd / caligula / Etcher)
+```
+
+Boot it (UEFI or BIOS). The installer starts on its own: pick the disk, user,
+computer name, timezone and machine type, confirm, and it installs the desktop
+**with no network**. Reboot, log in at ly, and **Finish setup** opens: it gets
+you online (Wi-Fi picker if needed), updates, and installs apps, gaming and
+AUR packages. Re-run it any time with `sanganak-finish-setup`.
+
+**Virtual machines** need 3D acceleration — niri doesn't render in software
+(QEMU: virtio-vga-gl + GL display; VirtualBox: VMSVGA + 3D; VMware: "Accelerate
+3D graphics"; Hyper-V can't). `iso/test-vm.sh` installs the ISO into QEMU
+unattended for testing.
 
 ### From the Arch ISO (bare-metal install)
 
