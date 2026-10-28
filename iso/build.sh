@@ -103,7 +103,8 @@ CONF
 BASE=(base base-devel linux linux-firmware mkinitcpio sudo git vim iwd e2fsprogs dosfstools
       pciutils usbutils man-db man-pages bash-completion intel-ucode amd-ucode
       grub efibootmgr os-prober mtools sbsigntools mokutil limine sbctl dkms linux-headers
-      tlp tlp-rdw acpi acpid upower brightnessctl bluez bluez-utils wpa_supplicant iio-sensor-proxy)
+      tlp tlp-rdw acpi acpid upower brightnessctl bluez bluez-utils wpa_supplicant iio-sensor-proxy
+      broadcom-wl-dkms)
 mapfile -t DESKTOP < <(read_list "$REPO/packages/desktop.txt")
 pacman --config "$WORK/pacman-build.conf" --dbpath "$WORK/db" -Sy >/dev/null
 pacman --config "$WORK/pacman-build.conf" --dbpath "$WORK/db" --cachedir "$OFFLINE" \

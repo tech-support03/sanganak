@@ -105,7 +105,7 @@ sudo pacman -Syu --noconfirm || warn "system upgrade failed"
 # ---- 3. apps + gaming -----------------------------------------------------
 step "Installing apps and the gaming stack"
 mapfile -t apps < <(read_list "$REPO/packages/apps.txt")
-read -ra gpu <<<"$(gpu_extras)"
+read -ra gpu <<<"$(gpu_extras) $(wifi_extras)"
 if ! sudo pacman -S --needed --noconfirm "${apps[@]}" "${gpu[@]}"; then
     # One bad package fails the whole transaction; retry one by one so the
     # rest still lands and the failures are named.

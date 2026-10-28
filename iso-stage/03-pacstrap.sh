@@ -73,6 +73,10 @@ PACSTRAP_ARGS=(-K)
 if [[ -n "${OFFLINE_CONF:-}" ]]; then
     source "$ROOT_DIR/modules/lib.sh"
     mapfile -t -O "${#BASE_PKGS[@]}" BASE_PKGS < <(read_list "$ROOT_DIR/packages/desktop.txt"; read_list "$ROOT_DIR/packages/aur-offline.txt")
+    # Wi-Fi that needs Broadcom's wl driver: build it now, offline, or the
+    # machine can't get online for Finish setup (the 2014 MacBook Air).
+    read -ra WIFI_PKGS <<<"$(wifi_extras)"
+    BASE_PKGS+=("${WIFI_PKGS[@]}")
     PACSTRAP_ARGS+=(-C "$OFFLINE_CONF")
 else
     # Mirror selection — let the user fix this post-install if desired.

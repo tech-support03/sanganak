@@ -8,7 +8,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 PKG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../packages" && pwd)"
 mapfile -t PKGS_CORE < <(read_list "$PKG_DIR/desktop.txt"; read_list "$PKG_DIR/apps.txt")
 read -ra GPU_PKGS <<<"$(gpu_extras)"
-PKGS_CORE+=("${GPU_PKGS[@]}")
+read -ra WIFI_PKGS <<<"$(wifi_extras)"
+PKGS_CORE+=("${GPU_PKGS[@]}" "${WIFI_PKGS[@]}")
 
 PKGS_BAREMETAL=(
     intel-ucode amd-ucode
