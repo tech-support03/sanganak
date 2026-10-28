@@ -9,7 +9,8 @@
 # optional: the install itself is offline, and Finish setup asks again after
 # the first login if needed.
 #
-# Unattended: attach a drive (or partition) labelled SANGANAK_AUTO holding
+# Unattended: attach a drive (or partition) labelled SANGANAK_AUTO (ext4 or
+# another filesystem whose labels allow 13 characters — not FAT) holding
 # sanganak-auto.conf with DISK= USERNAME= PASSWORD= HOSTNAME= TIMEZONE=
 # PROFILE= [SECURE_BOOT=true] and AUTO_CONFIRM=yes. Nothing is asked; the disk
 # named there is erased. (Used by iso/test-vm.sh.)

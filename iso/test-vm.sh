@@ -4,12 +4,13 @@
 #   iso/test-vm.sh install ISO   unattended install, no network (proves offline)
 #   iso/test-vm.sh boot          boot the installed disk (network on)
 #   iso/test-vm.sh shot FILE     screenshot the running VM (PNG)
-#   iso/test-vm.sh keys TEXT…    type into the running VM (qemu sendkey names, e.g. ret, alt-tab)
+#   iso/test-vm.sh keys KEY…     send keys to the VM (qemu sendkey names, e.g. ret, ctrl-alt-f2)
+#   iso/test-vm.sh type TEXT     type a line of text, then Enter
 #
 # Options (env): VM_DIR (default /var/tmp/sanganak-vm), GL=0 for a plain
 # virtio-vga without 3D (what a VM without GPU acceleration looks like),
 # FIRMWARE=bios for legacy boot. Runs as your user; needs /dev/kvm, qemu,
-# edk2-ovmf, mtools.
+# edk2-ovmf, e2fsprogs, socat.
 set -Eeuo pipefail
 
 VM_DIR="${VM_DIR:-/var/tmp/sanganak-vm}"
@@ -39,10 +40,12 @@ case "${1:-}" in
         rm -f "$DISK" "$VM_DIR/vars.fd"
         [[ "${FIRMWARE:-uefi}" == uefi ]] && cp /usr/share/edk2/x64/OVMF_VARS.4m.fd "$VM_DIR/vars.fd"
         qemu-img create -q -f qcow2 "$DISK" 40G
-        # Answers for sanganak-installer on a small FAT drive labelled SANGANAK_AUTO.
+        # Answers for sanganak-installer on a small drive labelled SANGANAK_AUTO.
         auto="$VM_DIR/auto.img"
-        rm -f "$auto"; truncate -s 4M "$auto"; mkfs.fat -n SANGANAK_AUTO "$auto" >/dev/null
-        cat > "$VM_DIR/sanganak-auto.conf" <<'CONF'
+        # ext4, not FAT: FAT labels stop at 11 characters. mke2fs -d fills it
+        # without root.
+        rm -rf "$auto" "$VM_DIR/auto"; mkdir -p "$VM_DIR/auto"
+        cat > "$VM_DIR/auto/sanganak-auto.conf" <<'CONF'
 DISK=/dev/vda
 USERNAME=tester
 PASSWORD=sanganak
@@ -51,7 +54,7 @@ TIMEZONE=America/Los_Angeles
 PROFILE=vm
 AUTO_CONFIRM=yes
 CONF
-        mcopy -i "$auto" "$VM_DIR/sanganak-auto.conf" ::/
+        mke2fs -q -t ext4 -L SANGANAK_AUTO -d "$VM_DIR/auto" "$auto" 8M
         echo "Installing (no network). The VM powers off when done; watch with: $0 shot FILE"
         qemu-system-x86_64 "${common[@]}" -nic none \
             -drive file="$DISK",if=virtio,format=qcow2 \
@@ -71,5 +74,22 @@ CONF
         shift
         for k in "$@"; do monitor "sendkey $k"; sleep 0.08; done
         ;;
-    *) sed -n '2,13p' "$0"; exit 2 ;;
+    type)
+        python3 -I - "${2:?usage: test-vm.sh type TEXT}" <<'PY' | while read -r k; do monitor "sendkey $k"; sleep 0.04; done
+import sys
+named = {" ": "spc", "-": "minus", "=": "equal", "/": "slash", ".": "dot", ",": "comma",
+         ";": "semicolon", "'": "apostrophe", "\\": "backslash", "[": "bracket_left",
+         "]": "bracket_right", "`": "grave_accent"}
+shifted = {"|": "backslash", "_": "minus", "+": "equal", "?": "slash", ">": "dot", "<": "comma",
+           ":": "semicolon", '"': "apostrophe", "{": "bracket_left", "}": "bracket_right", "~": "grave_accent",
+           "!": "1", "@": "2", "#": "3", "$": "4", "%": "5", "^": "6", "&": "7", "*": "8", "(": "9", ")": "0"}
+for c in sys.argv[1]:
+    if c in shifted: print("shift-" + shifted[c])
+    elif c in named: print(named[c])
+    elif c.isupper(): print("shift-" + c.lower())
+    else: print(c)
+print("ret")
+PY
+        ;;
+    *) sed -n '2,14p' "$0"; exit 2 ;;
 esac
