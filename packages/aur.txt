@@ -1,6 +1,12 @@
 # AUR — built by sanganak-finish-setup on first login (online).
 spotify
 wooting-bg-service
+# pywal (maintained fork, same `wal` command): the wallpaper theme (rice-theme wal).
+python-pywal16
+# tte: the screensaver's text effects (sanganak-screensaver).
+python-terminaltexteffects
+# Claude Code (Mod+Shift+A).
+claude-code
 # SF Pro: Apple's unversioned download breaks the checksum whenever Apple
 # updates it, so this one is allowed to fail (UI falls back to Noto Sans).
 apple-fonts

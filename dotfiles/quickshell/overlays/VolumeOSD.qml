@@ -75,7 +75,7 @@ Scope {
             Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
             Behavior on scale   { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
 
-            readonly property color accent: Services.Audio.muted ? "#6b7280" : Theme.blue
+            readonly property color accent: Services.Audio.muted ? Theme.fg3 : Theme.blue
 
             Row {
                 anchors.fill: parent
@@ -121,7 +121,7 @@ Scope {
                     width: 44
                     horizontalAlignment: Text.AlignRight
                     text: Services.Audio.muted ? "Muted" : (Services.Audio.volume + "%")
-                    color: Services.Audio.muted ? "#6b7280" : "#f4f4f6"
+                    color: Services.Audio.muted ? Theme.fg3 : Theme.fg0
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: 13
                     font.weight: Font.DemiBold

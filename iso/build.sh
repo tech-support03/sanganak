@@ -145,8 +145,7 @@ while IFS= read -r -d '' f; do
 done < <(cd "$PROFILE_DIR/airootfs/root/sanganak" && find . -type f -perm -u+x -print0)
 
 install -d "$PROFILE_DIR/airootfs/usr/share/sanganak"
-python3 -I "$REPO/scripts/sanganak-logo.py" ansi "$PROFILE_DIR/airootfs/usr/share/sanganak/logo.ansi" 32 \
-    "#f0522d" "#dfe5eb" "#39d98a" "#111215"
+python3 -I "$REPO/scripts/arch-logo.py" ansi "$PROFILE_DIR/airootfs/usr/share/sanganak/logo.ansi" "#f0522d"
 
 # ---- 4. build -----------------------------------------------------------------------
 log "Running mkarchiso"

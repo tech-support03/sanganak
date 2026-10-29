@@ -40,6 +40,8 @@ panels, launcher and power flyout, and installed from its own ISO.
 | Compositor | Niri (scrollable-tiling Wayland) |
 | Shell / bars / launcher / power flyout | Quickshell (QML) |
 | Lock screen | hyprlock — fingerprint or password (parallel); manual only, no idle daemon |
+| Screensaver | tte via `sanganak-screensaver` — Omarchy-style, after 2.5 min idle; never locks |
+| Colours | `rice-theme` — 4-colour palettes; the default follows the wallpaper via pywal |
 | Notifications | mako |
 | Wallpaper | swaybg (or swww when installed) — animated cycle via `wallpaper-next` |
 | Audio | PipeWire + WirePlumber |
@@ -137,6 +139,7 @@ reference, environment-variable equivalents, and recipes for each profile.
 | Bind | Action |
 | --- | --- |
 | `Super+Return` | alacritty |
+| `Super+Shift+A` | Claude Code in a terminal, in `~/arch-setup` |
 | `Super+Space` | toggle Quickshell launcher |
 | `Super+Escape` | toggle power flyout (Lock / Sign out / Suspend / Reboot / Power off) |
 | `Super+L` | lock (hyprlock — fingerprint or password) |
@@ -154,7 +157,8 @@ reference, environment-variable equivalents, and recipes for each profile.
 | `XF86MonBrightness*` | brightnessctl |
 
 The system **never auto-locks and never auto-blanks** — lock and suspend
-are user-initiated only.
+are user-initiated only. After 2.5 minutes idle a screensaver (the संगणक
+wordmark through a random tte effect) covers every output; any input ends it.
 
 ---
 
@@ -169,9 +173,25 @@ Reorder, add, or remove lines and save — Quickshell auto-reloads.
 
 ### Wallpaper
 
-Drop images into `~/Pictures/Wallpapers/`. Cycle with `Super+Shift+B`
-(or run `wallpaper-next` directly). The current pick is pre-blurred into
-`~/.cache/lockscreen-bg.jpg` so hyprlock always tracks the desktop.
+Wallpapers live in `~/Pictures/Wallpapers/` (jpg / png / webp). Cycle with
+`Super+Shift+B`. To add or remove them, use the sanganak menu
+(`Super+Alt+Space`: **Add wallpaper**, **Remove current wallpaper**,
+**Wallpapers folder**) or the `wallpaper` command:
+
+```sh
+wallpaper                          # list (● = on screen now)
+wallpaper add ~/Downloads/x.jpg    # copy in and show it (several files / URLs ok)
+wallpaper add                      # pick from ~/Downloads, ~/Pictures, ~/Desktop
+wallpaper rm                       # current one → Trash, show the next
+wallpaper rm e30                   # a named one (a unique prefix is enough)
+wallpaper set nsx                  # show a specific one
+wallpaper open                     # the folder in the file manager
+```
+
+Dropping files into the folder by hand works too. The current pick is pre-blurred into
+`~/.cache/lockscreen-bg.jpg` so hyprlock always tracks the desktop. Under the
+wallpaper theme (`rice-theme set wal`, the default) each new wallpaper also
+re-themes the whole rice from its pywal palette; see `docs/THEMING.md`.
 
 ### Display layout
 

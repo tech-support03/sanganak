@@ -2,6 +2,10 @@
 # wallpaper-next — advance to the next wallpaper in ~/Pictures/Wallpapers/.
 # Persists the current index in ~/.cache/wallpaper-index so cycles survive
 # across invocations without repeating.
+#
+#   wallpaper-next          the next one (Mod+Shift+B)
+#   wallpaper-next IMAGE    show IMAGE (a file in that folder) — `wallpaper`
+#                           uses this to add / set / remove
 set -Eeuo pipefail
 
 WP_DIR="$HOME/Pictures/Wallpapers"
@@ -12,7 +16,11 @@ mapfile -t imgs < <(find "$WP_DIR" -maxdepth 1 -type f \
     \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | sort)
 [[ ${#imgs[@]} -eq 0 ]] && exit 0
 
-if [[ -f "$CACHE" ]]; then
+if [[ -n "${1:-}" ]]; then
+    want="$(readlink -f "$1")"; idx=-1
+    for i in "${!imgs[@]}"; do [[ "$(readlink -f "${imgs[$i]}")" == "$want" ]] && idx=$i; done
+    (( idx >= 0 )) || { echo "wallpaper-next: $1 is not in $WP_DIR" >&2; exit 1; }
+elif [[ -f "$CACHE" ]]; then
     idx=$(<"$CACHE")
     idx=$(( (idx + 1) % ${#imgs[@]} ))
 else
@@ -31,6 +39,10 @@ elif command -v swaybg >/dev/null 2>&1; then
 else
     exit 0
 fi
+# Remember it (rice-theme's pywal theme reads it), and re-theme from it when
+# the wallpaper theme is active — `wal-sync` does nothing under a named theme.
+printf '%s\n' "${imgs[$idx]}" > "$HOME/.cache/wallpaper-current"
+command -v rice-theme >/dev/null 2>&1 && rice-theme wal-sync "${imgs[$idx]}" >/dev/null 2>&1 || true
 # Pre-blurred copy for hyprlock's lock background (kept in sync with wallpaper).
 if command -v magick >/dev/null 2>&1; then
     magick "${imgs[$idx]}" -resize 2560x1440^ -gravity center -extent 2560x1440 \

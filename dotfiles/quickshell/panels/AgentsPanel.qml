@@ -101,7 +101,8 @@ Panel {
             required property var modelData
             label: modelData.name
             detail: p.fmtTokens(modelData.total)
-            glyph: "󰘦"
+            // Claude models get the Claude mark (nf-cod-claude); others the robot.
+            glyph: /^claude/i.test(modelData.name) ? "\uEC82" : "󰚩"
         }
     }
     ListRow {

@@ -30,11 +30,11 @@ Scope {
     // through execDetached was a no-op on this setup — wrapping it the same
     // way the Lock action is wrapped makes everything fire reliably.
     readonly property var actions: [
-        { label: "Lock",      glyph: "",  shell: "pgrep -x hyprlock || hyprlock", danger: false },
-        { label: "Sign out",  glyph: "",  shell: "niri msg action quit --skip-confirmation",                                 danger: false },
-        { label: "Suspend",   glyph: "",  shell: "systemctl suspend",                                                        danger: false },
-        { label: "Reboot",    glyph: "",  shell: "systemctl reboot",                                                         danger: true  },
-        { label: "Power off", glyph: "",  shell: "systemctl poweroff",                                                       danger: true  },
+        { label: "Lock",      glyph: "",  shell: "pgrep -x hyprlock || hyprlock", danger: false },
+        { label: "Sign out",  glyph: "󰍃",  shell: "niri msg action quit --skip-confirmation",                                 danger: false },
+        { label: "Suspend",   glyph: "󰒲",  shell: "systemctl suspend",                                                        danger: false },
+        { label: "Reboot",    glyph: "󰜉",  shell: "systemctl reboot",                                                         danger: true  },
+        { label: "Power off", glyph: "",  shell: "systemctl poweroff",                                                       danger: true  },
     ]
 
     function open() {
@@ -114,24 +114,37 @@ Scope {
             Keys.onReturnPressed: scope.fire(scope.selected)
             Keys.onEnterPressed:  scope.fire(scope.selected)
 
-            // Translucent card — matches Theme.surface2 (alpha 0.50, radius 18).
+            // The card: theme base with the accent edge the bar panels use, so
+            // it re-themes live with everything else (pywal included).
             Rectangle {
                 id: card
                 anchors.centerIn: parent
                 width: 320
                 implicitHeight: list.implicitHeight + 28
-                radius: 18
-                color: Theme.tint(Theme.baseRaised, 0.50)
-                border.color: Qt.rgba(1, 1, 1, 0.09)
+                radius: Theme.radius
+                color: Theme.tint(Theme.base, 0.90)
+                border.color: Theme.panelEdge
                 border.width: 1
                 scale: scope.active ? 1.0 : 0.94
                 Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                Behavior on color { ColorAnimation { duration: Theme.animMed } }
+                Behavior on border.color { ColorAnimation { duration: Theme.animMed } }
 
                 Column {
                     id: list
                     anchors.fill: parent
                     anchors.margins: 14
                     spacing: 4
+
+                    Text {
+                        text: "Power"
+                        color: Theme.fg2
+                        font.family: Theme.fontSans
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        leftPadding: 4
+                        bottomPadding: 6
+                    }
 
                     Repeater {
                         model: scope.actions
@@ -142,39 +155,62 @@ Scope {
                             required property int index
                             width: parent.width
                             height: 48
-                            radius: 12
+                            radius: Theme.radiusSmall
 
                             readonly property bool sel: scope.selected === row.index
                             readonly property bool dangerous: !!modelData.danger
+                            // Reboot / power off show the danger red only once
+                            // they're selected; at rest every row is on-theme.
+                            readonly property color hue: row.dangerous && row.sel ? Theme.danger : Theme.accent
 
-                            color: row.sel
-                                   ? (row.dangerous ? Qt.rgba(0.91, 0.46, 0.46, 0.18)
-                                                    : Theme.tint(Theme.accent, 0.18))
-                                   : (hh.hovered ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
-                            Behavior on color { ColorAnimation { duration: 180 } }
+                            color: row.sel ? Theme.tint(row.hue, 0.16)
+                                           : (hh.hovered ? Theme.hoverFill : "transparent")
+                            Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                             scale: ma.pressed ? 0.96 : 1.0
                             Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
-                            Text {
-                                id: glyph
+                            // Selection bar on the left edge.
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 3
+                                height: row.sel ? 22 : 0
+                                radius: 1.5
+                                color: row.hue
+                                Behavior on height { NumberAnimation { duration: Theme.animMed; easing.type: Easing.OutBack } }
+                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                            }
+
+                            // Glyph tile.
+                            Rectangle {
+                                id: tile
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.left: parent.left
-                                anchors.leftMargin: 16
-                                text: row.modelData.glyph
-                                color: row.dangerous ? "#e87575" : Theme.accent
-                                font.family: "JetBrainsMono Nerd Font"
-                                font.pixelSize: 16
+                                anchors.leftMargin: 12
+                                width: 32; height: 32
+                                radius: 10
+                                color: Theme.tint(row.hue, row.sel ? 0.26 : 0.14)
+                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: row.modelData.glyph
+                                    color: row.hue
+                                    font.family: Theme.fontMono
+                                    font.pixelSize: 15
+                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                                }
                             }
 
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
-                                anchors.left: glyph.right
-                                anchors.leftMargin: 14
+                                anchors.left: tile.right
+                                anchors.leftMargin: 12
                                 text: row.modelData.label
-                                color: row.dangerous ? "#e87575" : "#f4f4f6"
+                                color: row.sel ? Theme.fg0 : Theme.fg1
                                 font.family: Theme.fontSans
                                 font.pixelSize: 14
+                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
                             }
 
                             HoverHandler {

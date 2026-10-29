@@ -8,11 +8,14 @@
 #     sudo scripts/theme-ly.sh                 # derive from ~/.config/rice/colors
 #     sudo scripts/theme-ly.sh c1 c2 c3 c4     # explicit #rrggbb palette
 #
-# Why a separate, root, opt-in command (and NOT part of `rice-theme set`):
-#   /etc/ly/config.ini is root-owned and read only when the greeter starts (at
-#   boot or after logout), so there's nothing to update live. Like the boot menu
-#   (scripts/theme-limine.sh), you resync this on demand; rice-theme reminds you
-#   when it has drifted. Counterpart of that script — no signing, just config.
+# Why a separate root command: /etc/ly/config.ini is root-owned and read only
+#   when the greeter starts (at boot or after logout). rice-theme runs it after
+#   every theme switch (including each wallpaper change under the pywal theme)
+#   as `sudo -n /usr/local/bin/theme-ly` — 07-services.sh installs a sudoers
+#   rule for exactly that command with no arguments, which reads the palette
+#   from the invoking user's ~/.config/rice/colors. Without the rule, run it by
+#   hand; rice-theme reminds you when it has drifted. Counterpart of
+#   scripts/theme-limine.sh — no signing, just config.
 #
 # Safety: edits ONLY the colour/appearance keys in /etc/ly/config.ini in place
 # (idempotent), leaving every other ly setting and all comments untouched, and
@@ -79,24 +82,25 @@ set_key error_fg  "0x01${RED}"      # 0x01 = TB_BOLD
 set_key clock     "%I:%M %p"        # 12-hour, per the rice's 12h-everywhere rule
 set_key asterisk  "0x2022"          # bullet password mask
 
-# ---- 3b) the संगणक chip logo above the login box ---------------------------
+# ---- 3b) the Arch Linux logo above the login box ---------------------------
 # ly (>= 1.2) can draw a durdraw file as its background "animation"; a single
-# static frame centred, then nudged up so it sits clear of the box. Rendered
-# in the palette by scripts/sanganak-logo.py (stdlib Python, '▀' cells only, so
-# any console font draws it). Only touched when this ly knows dur_file_path —
-# an older ly keeps its current animation setting.
-LOGO_PY="$(dirname "$(readlink -f "$0")")/sanganak-logo.py"
-[[ -f "$LOGO_PY" ]] || LOGO_PY="$(command -v sanganak-logo || true)"
+# static frame centred, then nudged up so it sits clear of the box. It is the
+# stock Arch ASCII logo in the accent, written by scripts/arch-logo.py (stdlib
+# Python, plain ASCII, so any console font draws it). Only touched when this ly
+# knows dur_file_path — an older ly keeps its current animation setting.
+LOGO_PY="$(dirname "$(readlink -f "$0")")/arch-logo.py"
+[[ -f "$LOGO_PY" ]] || LOGO_PY="$(command -v arch-logo || true)"
+rm -f /etc/ly/sanganak.dur                     # the retired chip logo
 if grep -qE '^[[:space:]]*#?[[:space:]]*dur_file_path[[:space:]]*=' "$CFG" && [[ -n "$LOGO_PY" ]]; then
-    if python3 "$LOGO_PY" dur /etc/ly/sanganak.dur 32 "$C1" "$C2" "$C3" "#${BG}"; then
-        chmod 644 /etc/ly/sanganak.dur
+    if python3 "$LOGO_PY" dur /etc/ly/archlinux.dur "$C1" "#${BG}"; then
+        chmod 644 /etc/ly/archlinux.dur
         set_key animation            "dur_file"
-        set_key dur_file_path        "/etc/ly/sanganak.dur"
+        set_key dur_file_path        "/etc/ly/archlinux.dur"
         set_key dur_offset_alignment "center"
         set_key dur_x_offset         "0"
-        set_key dur_y_offset         "-14"
+        set_key dur_y_offset         "-16"      # 19 rows: half the logo + half the box + a gap
         set_key full_color           "true"     # the logo is 256-colour encoded
-        LOGO_NOTE="  logo=/etc/ly/sanganak.dur"
+        LOGO_NOTE="  logo=/etc/ly/archlinux.dur"
     else
         echo ">> logo render failed — login screen left without a logo" >&2
     fi

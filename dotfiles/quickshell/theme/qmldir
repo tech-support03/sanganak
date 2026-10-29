@@ -1,3 +1,2 @@
 module theme
 singleton Theme 1.0 Theme.qml
-ChipLogo 1.0 ChipLogo.qml

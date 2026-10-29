@@ -36,6 +36,7 @@ QtObject {
     property bool   wifiEnabled: true
     property bool   ethernetUp:  false      // wired link is the active uplink
     property string localIp:     ""         // local IPv4 of the active uplink
+    property string gateway:     ""         // next hop of the active uplink (DNS's DHCP mode follows it)
 
     // ---- wired link (manual-override toggle) --------------------------------
     // networkd manages the wired NIC; iwd only does wifi. A plugged-in cable
@@ -227,18 +228,20 @@ QtObject {
 
             // ---- default route + local address (backend-neutral) -----------
             const routes = routeBlock.split("\n")
-            let routeDev = null, bestMetric = Infinity
+            let routeDev = null, routeVia = "", bestMetric = Infinity
             for (let r = 0; r < routes.length; r++) {
                 const t = routes[r].trim().split(/\s+/)
                 if (t[0] !== "default") continue
-                let dev = "", metric = 0
+                let dev = "", via = "", metric = 0
                 for (let k = 0; k < t.length - 1; k++) {
                     if (t[k] === "dev")    dev = t[k + 1]
+                    if (t[k] === "via")    via = t[k + 1]
                     if (t[k] === "metric") metric = parseInt(t[k + 1]) || 0
                 }
                 if (!dev) continue
-                if (metric < bestMetric) { bestMetric = metric; routeDev = dev }
+                if (metric < bestMetric) { bestMetric = metric; routeDev = dev; routeVia = via }
             }
+            gateway = routeVia
 
             const addrs = addrBlock.split("\n")
             const devIp = {}

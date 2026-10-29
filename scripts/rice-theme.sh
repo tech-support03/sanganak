@@ -9,6 +9,10 @@
 #   rice-theme create <name> c1 c2 c3 c4 [base]   write a new theme (base optional)
 #   rice-theme save <name>       snapshot the CURRENT live palette as <name>
 #   rice-theme apply             re-apply the active theme (used at boot)
+#   rice-theme wal [image]       derive the palette from the wallpaper (pywal) and
+#                                keep following it ("set wal" is the same)
+#   rice-theme wal-sync [image]  wallpaper scripts call this: re-derive only while
+#                                the wallpaper theme is active (quiet, no reminder)
 #
 # A "theme" is four colours (c1=accent/hero, c2=blue, c3=cyan, c4=teal) plus an
 # optional base= (the near-black every bar/panel/notification/terminal sits on;
@@ -16,8 +20,18 @@
 # other shade — bright/dim/muted accents, the album-art tint, btop's gradients —
 # is DERIVED here, so you only ever choose four. Design mirrors `rice-profile`:
 #   • Quickshell reads ~/.config/rice/colors LIVE (Theme.qml FileView) → no restart.
+#   • niri's focus ring is GENERATED into ~/.config/niri/colors.kdl, which the
+#     niri config includes; niri live-reloads included files.
 #   • btop / hyprlock / fastfetch / zsh can't watch a file, so they're GENERATED
 #     from templates into ~/.config and pick up the change on next launch.
+#   • the ly login screen is root-owned: theme-ly runs through a NOPASSWD sudoers
+#     rule (07-services.sh) after every switch. Limine stays manual (re-signing).
+#   • Zen's workspace colours (c1, c2) via zen-theme — applied while Zen is
+#     closed, otherwise queued until it exits.
+#
+# The "wal" theme is pywal (python-pywal16): `wal` reads the current wallpaper
+# (~/.cache/wallpaper-current, written by wallpaper-init / wallpaper-next) and
+# its 16 colours are mapped onto c1..c4 + base, then applied like any palette.
 set -Eeuo pipefail
 
 RICE_DIR="$HOME/.config/rice"
@@ -32,6 +46,10 @@ HYPRLOCK_CONF="$HOME/.config/hypr/hyprlock.conf"
 FASTFETCH_CFG="$HOME/.config/fastfetch/config.jsonc"
 MAKO_CFG="$HOME/.config/mako/config"
 ALACRITTY_COLORS="$RICE_DIR/alacritty-colors.toml"   # imported by alacritty.toml
+NIRI_COLORS="$HOME/.config/niri/colors.kdl"          # included by the niri config
+WAL_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/wal"
+WALLPAPER_CURRENT="${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper-current"
+WAL_PALETTE="$RICE_DIR/wal.palette"   # last wallpaper palette — the picker's swatch
 LEGACY_BASE="#0f1016"
 DEFAULT_THEME="deccan"
 
@@ -64,9 +82,9 @@ write_real() { local dst="$1"; mkdir -p "$(dirname "$dst")"; [[ -L "$dst" ]] && 
 active_name() { [[ -r "$ACTIVE_FILE" ]] && tr -d ' \n' < "$ACTIVE_FILE" || echo ""; }
 
 # Some rice surfaces live on root-owned files that only apply at boot / greeter
-# (the Secure-Boot-signed ESP boot menu, and ly's /etc login config). They are
-# NOT re-themed live with the rest of the rice — that needs root (+ a re-sign for
-# Limine). Instead, after a user-driven switch we compare the palette we just
+# (the Secure-Boot-signed ESP boot menu, and ly's /etc login config). ly follows
+# every switch through its sudoers rule (apply_palette); Limine needs a re-sign,
+# so it never changes on its own. Instead, after a user-driven switch we compare the palette we just
 # applied (C1..C4) against the one each surface was last built from (stamped as a
 # '# rice-synced-colors:' comment) and fire ONE reminder listing whatever drifted.
 # Only surfaces that are themed at all (file present + stamped) are checked; this
@@ -80,8 +98,8 @@ surfaces_sync_reminder() {
         stamp="$(echo $stamp)"                       # collapse whitespace + trim
         [[ -n "$stamp" && "$stamp" != "$cur" ]] && drift+=("• $name → $cmd")
     done <<'SURFACES'
-boot menu|/etc/limine-theme.conf|sudo scripts/theme-limine.sh
-login screen|/etc/ly/config.ini|sudo scripts/theme-ly.sh
+boot menu|/etc/limine-theme.conf|sudo theme-limine
+login screen|/etc/ly/config.ini|sudo theme-ly
 SURFACES
     [[ ${#drift[@]} -gt 0 ]] || return 0
     command -v notify-send >/dev/null 2>&1 && \
@@ -102,7 +120,7 @@ apply_palette() {
     C1="$C1" C2="$C2" C3="$C3" C4="$C4" BASE="${BASE:-$LEGACY_BASE}" \
     TPL_DIR="$TPL_DIR" BTOP_THEME="$BTOP_THEME" HYPRLOCK_CONF="$HYPRLOCK_CONF" \
     FASTFETCH_CFG="$FASTFETCH_CFG" COLORS_SH="$COLORS_SH" \
-    MAKO_CFG="$MAKO_CFG" ALACRITTY_COLORS="$ALACRITTY_COLORS" \
+    MAKO_CFG="$MAKO_CFG" ALACRITTY_COLORS="$ALACRITTY_COLORS" NIRI_COLORS="$NIRI_COLORS" \
     python3 - "$@" <<'PY'
 import os, colorsys, re
 
@@ -139,14 +157,38 @@ def render(tpl, dst, repl):
     with open(dst,'w') as f: f.write(s)
 
 tpl=os.environ['TPL_DIR']
-# hyprlock wants colours as rgba(rrggbbaa) — accent with no '#', opaque alpha.
+# hyprlock wants colours as rgba(rrggbbaa) — no '#', alpha as the last byte.
+def rgba(h, a='ff'): return 'rgba(%s%s)' % (h.lstrip('#'), a)
 render(os.path.join(tpl,'hyprlock.conf.tmpl'), os.environ['HYPRLOCK_CONF'],
-       {'@ACCENT_RGBA@': 'rgba(%sff)' % P['accent'].lstrip('#'),
-        '@BASE_RGBA@': 'rgba(%sff)' % P['base'].lstrip('#'),
+       {'@ACCENT_RGBA@': rgba(P['accent']),
+        '@ACCENT_BRIGHT_RGBA@': rgba(P['accent_bright']),
+        '@ACCENT_EDGE_RGBA@': rgba(P['accent'], '99'),     # input pill outline
+        '@BASE_RGBA@': rgba(P['base']),
+        '@BASE_FILL_RGBA@': rgba(P['base'], 'b3'),          # input pill fill
         '@HOME@': os.environ['HOME']})
 render(os.path.join(tpl,'fastfetch-config.jsonc.tmpl'), os.environ['FASTFETCH_CFG'],
        {'@ACCENT_SGR@': sgr(P['accent']), '@CYAN_SGR@': sgr(P['cyan']),
         '@BLUE_SGR@': sgr(P['blue']), '@HOME@': os.environ['HOME']})
+
+# niri: a gradient focus ring (accent → c2) round the focused window only. The
+# profile fragments end with `include optional=true "colors.kdl"`, and niri
+# merges an included layout{} field by field and live-reloads included files.
+d=os.path.dirname(os.environ['NIRI_COLORS']); os.makedirs(d, exist_ok=True)
+if os.path.islink(os.environ['NIRI_COLORS']): os.unlink(os.environ['NIRI_COLORS'])
+with open(os.environ['NIRI_COLORS'],'w') as f:
+    f.write(f"""// GENERATED by rice-theme — the focus ring in the active palette.
+// Included by config.full.kdl / config.light.kdl; edit rice-theme, not this.
+layout {{
+    focus-ring {{
+        on
+        width 2
+        active-gradient from="{P['accent']}" to="{P['blue']}" angle=45 in="oklch shorter hue"
+        // Only the focused window gets a ring, not the active one on other outputs.
+        inactive-color "#00000000"
+        urgent-color "{P['accent_bright']}"
+    }}
+}}
+""")
 # mako: notifications sit on the theme base (translucent), accent progress bar.
 render(os.path.join(tpl,'mako-config.tmpl'), os.environ['MAKO_CFG'],
        {'@BASE@': P['base'], '@ACCENT@': P['accent']})
@@ -218,23 +260,112 @@ PY
     # btop theme written to a tmp file by python; place it (de-symlinking).
     write_real "$BTOP_THEME" < /tmp/.rice-btop-theme && rm -f /tmp/.rice-btop-theme
 
-    # The logo in the new colours: the lock screen's PNG (hyprlock image
-    # widget) and fastfetch's half-block art. Non-fatal: without them hyprlock
-    # skips the image and fastfetch prints no logo.
-    if command -v sanganak-logo >/dev/null 2>&1; then
-        sanganak-logo png "$HOME/.config/hypr/sanganak-logo.png" 320 \
-            "$C1" "$C2" "$C3" "${BASE:-$LEGACY_BASE}" || c_err "logo render failed (lock screen shows no logo)"
-        sanganak-logo ansi "$HOME/.config/fastfetch/sanganak-logo.ansi" 32 \
-            "$C1" "$C2" "$C3" "${BASE:-$LEGACY_BASE}" || c_err "logo render failed (fastfetch shows no logo)"
-    fi
+    # The lock screen and fastfetch draw the stock Arch logo themselves now
+    # (hyprlock label glyph, fastfetch builtin); drop the old chip renders.
+    rm -f "$HOME/.config/hypr/sanganak-logo.png" "$HOME/.config/fastfetch/sanganak-logo.ansi"
 
     # mako has no file watch; reload it if it's running.
     command -v makoctl >/dev/null 2>&1 && makoctl reload >/dev/null 2>&1 || true
+
+    # ly's /etc/ly/config.ini is root-owned. 07-services.sh installs a sudoers
+    # rule letting the wheel group run exactly `theme-ly` (no arguments; it
+    # reads ~/.config/rice/colors) without a password, so the login screen
+    # follows every switch. Without the rule, sudo -n just fails and the drift
+    # reminder below names the login screen instead.
+    [[ -x /usr/local/bin/theme-ly ]] && sudo -n /usr/local/bin/theme-ly >/dev/null 2>&1 || true
+
+    # Zen (the default browser): workspace 1 takes c1, workspace 2 takes c2.
+    # Zen only reads them at startup, so with Zen open this queues the change
+    # for when it closes (scripts/zen-theme.py).
+    command -v zen-theme >/dev/null 2>&1 && zen-theme apply >/dev/null 2>&1 || true
+}
+
+# ---- wallpaper theme (pywal) --------------------------------------------------
+current_wallpaper() { [[ -r "$WALLPAPER_CURRENT" ]] && head -n1 "$WALLPAPER_CURRENT" || true; }
+
+# Run pywal on the wallpaper and map its colours onto C1..C4 + BASE. Returns 1
+# (globals untouched) when pywal or a wallpaper is missing, or wal fails.
+#   c1   the most vivid of pywal's six image colours, saturation lifted a little
+#        so the accent still reads on the black bezel
+#   c2-4 the remaining colours picked greedily for the biggest difference from
+#        those already chosen, brightened enough to read on black
+#   base pywal's background hue, darkened to the rice's near-black
+wal_palette() {
+    local img="${1:-}" out
+    [[ -n "$img" ]] || img="$(current_wallpaper)"
+    command -v wal >/dev/null 2>&1 || { c_err "pywal is not installed (yay -S python-pywal16)"; return 1; }
+    [[ -n "$img" && -r "$img" ]] || { c_err "no wallpaper to take colours from (set one with wallpaper-next)"; return 1; }
+    # -n: wallpaper is ours (swaybg/swww)  -s -t: don't recolour open terminals or
+    # ttys (alacritty's ANSI palette is not themed)  -e: no gtk/xrdb/i3 reloads.
+    wal -i "$img" -n -s -t -e -q >/dev/null 2>&1 || { c_err "wal failed on $img"; return 1; }
+    out="$(python3 - "$WAL_CACHE/colors.json" <<'PY'
+import json, colorsys, sys
+
+def hex2rgb(h): h=h.lstrip('#'); return tuple(int(h[i:i+2],16)/255 for i in (0,2,4))
+def rgb2hex(r): return '#%02x%02x%02x' % tuple(max(0,min(255,round(x*255))) for x in r)
+def hsv(h): return colorsys.rgb_to_hsv(*hex2rgb(h))
+def fromhsv(h,s,v): return rgb2hex(colorsys.hsv_to_rgb(h%1, max(0,min(1,s)), max(0,min(1,v))))
+
+def shape(c, smin, vmin, vmax):
+    h,s,v = hsv(c)
+    if s > 0.04: s = max(s, smin)                  # greys stay grey
+    return fromhsv(h, s, min(max(v, vmin), vmax))
+
+def dist(a, b):
+    (h1,s1,v1),(h2,s2,v2) = hsv(a), hsv(b)
+    dh = min(abs(h1-h2), 1-abs(h1-h2)) * 2         # hue gap, 0..1
+    return dh * min(s1, s2) * 4 + abs(s1-s2) + abs(v1-v2)
+
+d = json.load(open(sys.argv[1]))
+cands = list(dict.fromkeys(d['colors']['color%d' % i].lower() for i in range(1, 7)))
+c1 = max(cands, key=lambda c: hsv(c)[1] * (0.6 + hsv(c)[2]))
+chosen, pool = [c1], [c for c in cands if c != c1]
+while len(chosen) < 4 and pool:
+    nxt = max(pool, key=lambda c: min(dist(c, x) for x in chosen))
+    chosen.append(nxt); pool.remove(nxt)
+while len(chosen) < 4:                             # near-monochrome wallpapers
+    h,s,v = hsv(chosen[-1]); chosen.append(fromhsv(h + 0.12, s, v))
+h,s,v = hsv(d['special']['background'])
+print(' '.join([shape(chosen[0], 0.38, 0.78, 0.96)]
+               + [shape(c, 0.22, 0.66, 0.94) for c in chosen[1:]]
+               + [fromhsv(h, min(s, 0.35), 0.075)]))
+PY
+)" || { c_err "couldn't read pywal's colours"; return 1; }
+    read -r C1 C2 C3 C4 BASE <<<"$out"
+    [[ "$C1$C2$C3$C4$BASE" =~ ^(#[0-9a-f]{6}){5}$ ]] || { c_err "pywal mapping gave: $out"; return 1; }
+}
+
+# The live palette back into C1..C4 + BASE (re-render after a template change).
+load_live_palette() {
+    local L
+    [[ -r "$COLORS_FILE" ]] || return 1
+    mapfile -t L < <(grep -oE '#[0-9a-fA-F]{6}' "$COLORS_FILE")
+    [[ ${#L[@]} -ge 4 ]] || return 1
+    C1="${L[0]}" C2="${L[1]}" C3="${L[2]}" C4="${L[3]}" BASE="${L[4]:-}"
+}
+
+cmd_wal() {
+    local img="${1:-}"
+    mkdir -p "$RICE_DIR"
+    echo "wal" > "$ACTIVE_FILE"
+    if wal_palette "$img"; then
+        printf '%s\n' "$C1" "$C2" "$C3" "$C4" "$BASE" > "$WAL_PALETTE"
+        apply_palette
+        c_info "theme → wallpaper ($C1 $C2 $C3 $C4 base $BASE)"
+        return 0
+    fi
+    # pywal or a wallpaper isn't there yet (fresh install before Finish setup /
+    # 09-wallpapers). Stay in wallpaper mode, so the next wallpaper change picks
+    # it up, and render the configs from the live palette (else deccan).
+    load_live_palette || load_theme_file "$THEMES_DIR/$DEFAULT_THEME.theme"
+    apply_palette
+    c_info "wallpaper theme selected; using $C1 $C2 $C3 $C4 until pywal can run"
 }
 
 # ---- subcommands ------------------------------------------------------------
 cmd_set() {
     local name="$1"
+    [[ "$name" == "wal" ]] && { cmd_wal; return; }
     load_theme_file "$THEMES_DIR/$name.theme"
     apply_palette
     echo "$TNAME" > "$ACTIVE_FILE"
@@ -244,11 +375,14 @@ cmd_set() {
 cmd_next() {
     local cur all arr i n; cur="$(active_name)"
     mapfile -t arr < <(themes_list)
+    # The wallpaper theme leads the cycle once pywal is installed.
+    command -v wal >/dev/null 2>&1 && arr=("wal" "${arr[@]}")
     [[ ${#arr[@]} -gt 0 ]] || die "no themes in $THEMES_DIR"
     n=${#arr[@]}; i=0
     for ((j=0;j<n;j++)); do [[ "${arr[$j]}" == "$cur" ]] && i=$j; done
     local nxt="${arr[$(((i+1)%n))]}"
     cmd_set "$nxt"
+    [[ "$nxt" == "wal" ]] && nxt="wallpaper"
     command -v notify-send >/dev/null && \
         notify-send -t 2500 "Theme → $nxt" "$C1  $C2  $C3  $C4" || true
 }
@@ -280,6 +414,10 @@ cmd_save() {  # snapshot current live palette under a new name
 
 cmd_list() {
     local cur; cur="$(active_name)"
+    if command -v wal >/dev/null 2>&1; then
+        if [[ "$cur" == "wal" ]]; then printf '  ● wal — follows the wallpaper (active)\n'
+        else printf '  ○ wal — follows the wallpaper\n'; fi
+    fi
     while read -r t; do
         [[ -z "$t" ]] && continue
         if [[ "$t" == "$cur" ]]; then printf '  ● %s (active)\n' "$t"; else printf '  ○ %s\n' "$t"; fi
@@ -304,7 +442,13 @@ main() {
         create) [[ $# -eq 5 || $# -eq 6 ]] || die "usage: rice-theme create <name> c1 c2 c3 c4 [base]"; cmd_create "$@" ;;
         save)   [[ $# -ge 1 ]] || die "usage: rice-theme save <name>"; cmd_save "$1" ;;
         apply)  local a; a="$(active_name)"; [[ -n "$a" ]] || a="$DEFAULT_THEME"; cmd_set "$a" ;;
-        *) die "unknown command: $cmd (try: status|list|set|next|create|save|apply)" ;;
+        wal)    cmd_wal "${1:-}"; surfaces_sync_reminder ;;
+        wal-sync)  # from wallpaper-init / wallpaper-next: only in wallpaper mode
+                [[ "$(active_name)" == "wal" ]] || exit 0
+                wal_palette "${1:-}" || exit 0
+                printf '%s\n' "$C1" "$C2" "$C3" "$C4" "$BASE" > "$WAL_PALETTE"
+                apply_palette ;;
+        *) die "unknown command: $cmd (try: status|list|set|next|create|save|apply|wal)" ;;
     esac
 }
 main "$@"

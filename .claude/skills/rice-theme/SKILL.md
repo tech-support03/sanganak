@@ -48,6 +48,11 @@ placeholder), `blueBright`.
 - `rice-theme next` — cycle (also bound to **Mod+Shift+T**)
 - **Mod+T** — Quickshell picker overlay (swatch menu)
 - `rice-theme status` — active theme name
+- `rice-theme set wal` / `rice-theme wal` — follow the wallpaper: pywal
+  (`python-pywal16`) derives c1..c4 + base from the current wallpaper, and
+  every wallpaper change re-derives them (`wal-sync`). This is the default.
+  If the user asks for colours "from my wallpaper", this is it — don't
+  hand-pick a palette.
 
 The default theme is **`deccan`** (`#f0522d #dfe5eb #39d98a #9fb4c7`,
 `base=#111215`); **`indigo`** (`#5b6ee0 #60a5fa #22d3ee #2dd4bf`) is the
@@ -61,10 +66,16 @@ the black every bar/panel/notification/terminal/lock/login sits on.
   bind to `Theme.<token>` in `dotfiles/quickshell/Theme.qml`, which reads the
   4 colours live from `~/.config/rice/colors`. **Never hardcode a hex in QML** —
   add/relabel a token in `Theme.qml` instead, or the surface won't follow themes.
-- **btop / hyprlock / fastfetch / zsh**: can't watch a file, so `rice-theme`
-  GENERATES them from `dotfiles/rice/templates/*` (and inline for btop) into
-  `~/.config` on every switch. btop/hyprlock/fastfetch reload on next launch;
-  the zsh prompt sources `~/.config/rice/colors.sh` (new terminals pick it up).
+- **btop / hyprlock / fastfetch / zsh / mako / alacritty bg**: can't watch a
+  file, so `rice-theme` GENERATES them from `dotfiles/rice/templates/*` (and
+  inline for btop) into `~/.config` on every switch. btop/hyprlock/fastfetch
+  reload on next launch; the zsh prompt sources `~/.config/rice/colors.sh`
+  (new terminals pick it up).
+- **niri focus ring**: generated into `~/.config/niri/colors.kdl` (included by
+  both profile fragments, live-reloaded).
+- **ly greeter**: `theme-ly` via the `30-theme-ly` sudoers rule, every switch.
+- **Zen browser**: `zen-theme apply` — workspace 1 = c1, workspace 2 = c2 in
+  `zen-sessions.jsonlz4`; queued until Zen closes when it's open.
 
 ## Not themed on purpose
 

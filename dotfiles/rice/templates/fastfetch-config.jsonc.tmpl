@@ -1,16 +1,13 @@
 // ~/.config/fastfetch/config.jsonc
-// Minimal translucent system summary for the sidebar logo popup.
+// Minimal translucent system summary for the bar's Arch-logo popup.
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-    // The संगणक chip mark as 24-bit half-block pixel art — the same square chip
-    // as the login screen. `rice-theme` renders it in the active palette with
-    // `sanganak-logo ansi` (32 px → 32 columns × 16 rows); file-raw prints the
-    // escape codes as-is, so width/height must match that size.
+    // The stock Arch Linux logo (fastfetch builtin), both colour slots in the
+    // theme accent so it re-themes with `rice-theme` like everything else.
     "logo": {
-        "type": "file-raw",
-        "source": "@HOME@/.config/fastfetch/sanganak-logo.ansi",
-        "width": 32,
-        "height": 16,
+        "type": "builtin",
+        "source": "arch",
+        "color": { "1": "@ACCENT_SGR@", "2": "@ACCENT_SGR@" },
         "padding": { "top": 0, "right": 3 }
     },
     "display": {

@@ -5,7 +5,9 @@
 // backdrop, click-outside / Escape closes, exclusive keyboard focus.
 //
 // Lists every saved theme (~/.config/rice/themes/*.theme) with its four-colour
-// swatch; clicking one runs `rice-theme set <name>`. The shell re-themes live
+// swatch, led by "wallpaper" — the pywal theme that follows the wallpaper (its
+// swatch is the last wallpaper palette, ~/.config/rice/wal.palette); clicking
+// one runs `rice-theme set <name>`. The shell re-themes live
 // off Theme.qml's FileView, and the active marker tracks ~/.config/rice/theme.
 // The cycle bind (Mod+Shift+T) calls `rice-theme next` directly — no overlay.
 
@@ -45,10 +47,13 @@ Scope {
         onLoaded: scope.activeName = text().trim()
     }
 
-    // Theme list: one line per theme "name #c1 #c2 #c3 #c4".
+    // Theme list: one line per theme "name #c1 #c2 #c3 #c4", "wal" first when
+    // pywal is installed.
     Process {
         id: lister
         command: ["sh", "-c",
+            "if command -v wal >/dev/null 2>&1; then " +
+            "echo \"wal $(grep -oE '#[0-9a-fA-F]{6}' \"$HOME/.config/rice/wal.palette\" 2>/dev/null | head -4 | tr '\\n' ' ')\"; fi; " +
             "for f in \"$HOME\"/.config/rice/themes/*.theme; do [ -e \"$f\" ] || continue; " +
             "n=$(basename \"$f\" .theme); " +
             "cs=$(grep -oE '#[0-9a-fA-F]{6}' \"$f\" | head -4 | tr '\\n' ' '); " +
@@ -165,7 +170,7 @@ Scope {
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.left: dot.right
                                 anchors.leftMargin: 12
-                                text: row.modelData.name
+                                text: row.modelData.name === "wal" ? "wallpaper (pywal)" : row.modelData.name
                                 color: row.isActive ? Theme.fg0 : Theme.fg1
                                 font.family: Theme.fontSans
                                 font.pixelSize: 14

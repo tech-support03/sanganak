@@ -6,6 +6,5 @@ import "../../ui"
 
 BarButton {
     glyph: ""
-    tint: Theme.danger
     onClicked: Quickshell.execDetached(["qs", "ipc", "call", "power", "toggle"])
 }

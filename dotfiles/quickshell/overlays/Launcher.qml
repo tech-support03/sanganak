@@ -186,7 +186,7 @@ Scope {
                     anchors.left: parent.left
                     anchors.leftMargin: 20
                     text: ""   // nerd-font search glyph
-                    color: "#8e8e96"
+                    color: Theme.fg2
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: 15
                 }
@@ -199,9 +199,9 @@ Scope {
                     anchors.rightMargin: 18
                     anchors.verticalCenter: parent.verticalCenter
                     background: Item {}
-                    color: "#f4f4f6"
+                    color: Theme.fg0
                     placeholderText: "Search"
-                    placeholderTextColor: "#8e8e96"
+                    placeholderTextColor: Theme.fg2
                     font.family: Theme.fontSans
                     font.pixelSize: 16
                     verticalAlignment: TextInput.AlignVCenter
@@ -340,7 +340,7 @@ Scope {
                         width: 150
                         horizontalAlignment: Text.AlignHCenter
                         text: tile.modelData ? tile.modelData.name : ""
-                        color: tile.selected ? "#ffffff" : "#f4f4f6"
+                        color: Theme.fg0
                         font.family: Theme.fontSans
                         font.pixelSize: 12
                         elide: Text.ElideRight
@@ -357,7 +357,7 @@ Scope {
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: scope.results.length === 0
                 text: scope.query.length > 0 ? "No results" : "No apps found"
-                color: "#8e8e96"
+                color: Theme.fg2
                 font.family: Theme.fontSans
                 font.pixelSize: 14
             }

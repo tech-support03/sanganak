@@ -93,6 +93,26 @@ sudo systemctl enable ly@tty1.service
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 sudo "$REPO_ROOT/scripts/theme-ly.sh" || log "ly theming skipped (run later: sudo scripts/theme-ly.sh)"
 
+# After that, rice-theme keeps the greeter in step with every theme switch (the
+# pywal theme changes it with each wallpaper) by running theme-ly without a
+# password: exactly /usr/local/bin/theme-ly (root-owned, installed by
+# 08-link-dotfiles.sh) and only with NO arguments — it then reads the invoking
+# user's ~/.config/rice/colors and accepts nothing but #rrggbb values.
+sudo install -Dm440 /dev/stdin /etc/sudoers.d/30-theme-ly <<'CONF'
+# rice-theme re-themes the ly login screen on every theme switch.
+%wheel ALL=(root) NOPASSWD: /usr/local/bin/theme-ly ""
+CONF
+sudo visudo -cf /etc/sudoers.d/30-theme-ly >/dev/null || { sudo rm -f /etc/sudoers.d/30-theme-ly; log "theme-ly sudoers rule rejected — removed"; }
+
+# The network panel's DNS row rewrites /etc/resolv.conf through sanganak-dns.
+# The three fixed providers run without a password; Custom (any server could be
+# typed in) is deliberately left out, so sudo asks for it in a terminal.
+sudo install -Dm440 /dev/stdin /etc/sudoers.d/40-sanganak-dns <<'CONF'
+# The network panel switches DNS between the fixed providers.
+%wheel ALL=(root) NOPASSWD: /usr/local/bin/sanganak-dns Cloudflare, /usr/local/bin/sanganak-dns Google, /usr/local/bin/sanganak-dns DHCP
+CONF
+sudo visudo -cf /etc/sudoers.d/40-sanganak-dns >/dev/null || { sudo rm -f /etc/sudoers.d/40-sanganak-dns; log "sanganak-dns sudoers rule rejected — removed"; }
+
 # Hypervisor guest agent for the hypervisor we're running under (none on
 # bare metal); all of them are installed from desktop.txt.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"

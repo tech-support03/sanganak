@@ -56,6 +56,10 @@ elif command -v swaybg >/dev/null 2>&1; then
 else
     exit 0
 fi
+# Remember it (rice-theme's pywal theme reads it), and re-theme from it when
+# the wallpaper theme is active — `wal-sync` does nothing under a named theme.
+printf '%s\n' "${imgs[$idx]}" > "$HOME/.cache/wallpaper-current"
+command -v rice-theme >/dev/null 2>&1 && rice-theme wal-sync "${imgs[$idx]}" >/dev/null 2>&1 || true
 # Pre-blurred copy for hyprlock's lock background (kept in sync with wallpaper).
 if command -v magick >/dev/null 2>&1; then
     magick "${imgs[$idx]}" -resize 2560x1440^ -gravity center -extent 2560x1440 \

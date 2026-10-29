@@ -18,9 +18,10 @@ link() {
 }
 
 # Niri compositor. config.kdl is GENERATED (base + active profile fragment) by
-# `rice-profile`, NOT symlinked — niri's layout{}/animations{} are single nodes,
-# so the full/light variants can't be layered via include and are concatenated
-# instead. Link the three source fragments; config.kdl itself is built below,
+# `rice-profile`, NOT symlinked — niri's layout{}/animations{} are single nodes
+# within one file, so the full/light variants are concatenated. (The theme's
+# focus ring is an included colors.kdl, written by rice-theme: niri does merge
+# a layout{} across includes.) Link the three source fragments; config.kdl itself is built below,
 # after the scripts (rice-profile) are installed.
 link "$DOTFILES_DIR/niri/config.base.kdl"       "$HOME/.config/niri/config.base.kdl"
 link "$DOTFILES_DIR/niri/config.full.kdl"       "$HOME/.config/niri/config.full.kdl"
@@ -105,6 +106,15 @@ if command -v gsettings >/dev/null 2>&1; then
     ' >/dev/null 2>&1 && ok "gsettings fonts set (SF Pro Text / JetBrains Mono)" \
         || warn "gsettings font keys not set; GTK falls back to settings.ini"
 fi
+# blueman-applet stays (it is the Bluetooth pairing agent blueman-manager uses)
+# but its tray icon goes: the bar has its own Bluetooth button. Dropping the
+# StatusIcon plugin (and ShowConnected, which needs it) stops blueman-tray.
+if command -v gsettings >/dev/null 2>&1; then
+    dbus-run-session gsettings set org.blueman.general plugin-list \
+        "['!StatusIcon', '!ShowConnected', '!StatusNotifierItem']" >/dev/null 2>&1 \
+        && ok "blueman tray icon disabled (applet kept as pairing agent)" \
+        || warn "couldn't disable blueman's tray icon (gsettings org.blueman.general)"
+fi
 fc-match -f '%{family[0]}\n' sans-serif | grep -q '^SF Pro' \
     && ok "sans-serif resolves to SF Pro" \
     || warn "SF Pro not installed (apple-fonts); UI text falls back to Noto Sans"
@@ -122,8 +132,9 @@ for s in "$SCRIPTS_DIR"/*.sh; do
     sudo install -m755 "$s" "/usr/local/bin/${name%.sh}"
     ok "installed script: ${name%.sh}"
 done
-# Logo renderer (Python, stdlib only) — rice-theme calls it for the lock screen.
-# Python tools (sanganak-logo, sanganak-keybindings, sanganak-agent-usage).
+# Python tools (arch-logo — theme-ly's login-screen logo — sanganak-keybindings,
+# sanganak-agent-usage). sanganak-logo (the retired chip mark) is removed.
+rm -f "$HOME/.local/bin/sanganak-logo"; sudo rm -f /usr/local/bin/sanganak-logo
 for s in "$SCRIPTS_DIR"/*.py; do
     name="$(basename "$s" .py)"
     install -m755 "$s" "$HOME/.local/bin/$name"
@@ -142,13 +153,16 @@ log "Generating niri config.kdl via rice-profile"
 }
 ok "niri config.kdl generated (profile: $("$HOME/.local/bin/rice-profile" status))"
 
-# Generate the themed configs (btop/hyprlock/fastfetch + the live Quickshell
-# palette + zsh colours) from the active theme. Defaults to "deccan"
-# unless a previous install already chose one. This also de-symlinks the
-# fastfetch/btop-theme files seeded above and writes ~/.config/hypr/hyprlock.conf.
+# Generate the themed configs (btop/hyprlock/fastfetch/mako, niri's focus ring
+# + the live Quickshell palette + zsh colours) from the active theme. Defaults
+# to "wal" — the pywal theme that follows the wallpaper — unless a previous
+# install already chose one. Until pywal (aur.txt) and a wallpaper exist it
+# renders deccan and switches over at the next wallpaper change. This also
+# de-symlinks the fastfetch/btop-theme files seeded above and writes
+# ~/.config/hypr/hyprlock.conf.
 log "Applying rice theme (generates themed configs)"
 RICE_ACTIVE="$("$HOME/.local/bin/rice-theme" status 2>/dev/null || true)"
-"$HOME/.local/bin/rice-theme" set "${RICE_ACTIVE:-deccan}" \
+"$HOME/.local/bin/rice-theme" set "${RICE_ACTIVE:-wal}" \
     || warn "rice-theme apply failed; run 'rice-theme set deccan' after install"
 ok "rice theme applied (theme: $("$HOME/.local/bin/rice-theme" status))"
 

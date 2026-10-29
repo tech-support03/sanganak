@@ -126,6 +126,15 @@ window-rule {
     default-window-height { fixed 640; }
 }
 
+// The screensaver (sanganak-screensaver): one terminal per output running tte
+// over the संगणक wordmark, fullscreen, with no focus ring. Its opacity is
+// pinned to 1.0 in config.full.kdl, after the unfocused-window fade.
+window-rule {
+    match app-id="^sanganak\\.screensaver$"
+    open-fullscreen true
+    focus-ring { off; }
+}
+
 // Games run through gamescope (`gamescope -- %command%`). gamescope nests its
 // own compositor in a single window; on a scrollable-tiling WM that window
 // otherwise opens as a small/unfocused tile, so the game renders into a surface
@@ -173,6 +182,9 @@ layer-rule {
 // quickshell starts, so the MacBook's GRUB entry comes up light automatically.
 spawn-at-startup "rice-profile-seed"
 spawn-at-startup "wallpaper-init"
+// Zen's workspace colours follow the theme, but Zen only reads them at startup;
+// catch up on a switch made while it was open when the session ended.
+spawn-at-startup "zen-theme" "apply"
 // Both bars are Quickshell (right-edge bezel bar + top media notch).
 spawn-at-startup "quickshell"
 spawn-at-startup "mako"
@@ -192,13 +204,18 @@ spawn-at-startup "sanganak-finish-setup" "--auto"
 // No idle daemon: the system stays awake and unlocked until the user
 // acts. Lock is manual only (Mod+L → hyprlock). Suspend/poweroff are
 // manual only (Quickshell power flyout). swayidle is intentionally not
-// spawned here.
+// spawned here. The one idle behaviour is the screensaver after 2.5 min,
+// started by Quickshell's own idle monitor (overlays/Screensaver.qml) — it
+// never locks or blanks.
 
 // =============================================================================
 //  Keybindings — macOS/ChromeOS-flavored.
 // =============================================================================
 binds {
     Mod+Return         hotkey-overlay-title="Terminal" { spawn "alacritty"; }
+    // Claude Code in its own terminal (Omarchy-style), in the rice repo
+    // (~/arch-setup); home if that isn't there. sh, because niri doesn't expand $HOME.
+    Mod+Shift+A        hotkey-overlay-title="Claude Code" { spawn "sh" "-c" "cd \"$HOME/arch-setup\" 2>/dev/null; exec alacritty --class sanganak.claude --title 'Claude Code' -e claude"; }
     Mod+Space          hotkey-overlay-title="App launcher" { spawn "qs" "ipc" "call" "launcher" "toggle"; }
     // The sanganak menu (packages, updates, keybindings, theme, system).
     Mod+Alt+Space      hotkey-overlay-title="sanganak menu" { spawn "qs" "ipc" "call" "panel" "toggle" "menu"; }

@@ -49,7 +49,9 @@ FAILED=()
 source "$REPO/modules/lib.sh"
 
 clear
-[[ -f "$HOME/.config/fastfetch/sanganak-logo.ansi" ]] && cat "$HOME/.config/fastfetch/sanganak-logo.ansi"
+# The Arch logo in the theme accent (first line of the live palette).
+logo_c="$(grep -m1 -oE '#[0-9a-fA-F]{6}' "$HOME/.config/rice/colors" 2>/dev/null || echo '#f0522d')"
+command -v arch-logo >/dev/null && arch-logo ansi - "$logo_c"
 printf '\n  %ssanganak — finish setup%s\n' "$bold" "$off"
 printf '  %sApps, gaming, AUR packages and a full update. This needs the internet and takes a while.%s\n' "$dim" "$off"
 

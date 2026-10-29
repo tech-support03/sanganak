@@ -6,7 +6,8 @@
 // The lock screen is NOT handled by Quickshell — it's hyprlock, fired
 // only by the Mod+L keybind in niri. Quickshell's WlSessionLock proved
 // unstable; hyprlock owns locking (parallel fingerprint + password, per
-// CLAUDE.md §6). No idle daemon — lock is manual-only.
+// CLAUDE.md §6). No idle daemon — lock is manual-only; the only idle
+// behaviour is the screensaver (overlays/Screensaver.qml).
 //
 // IMPORTANT: keep this file thin. Logic goes in services/, UI goes in
 // bars/. Theme tokens come from Theme.qml — never hardcode a color here.
@@ -47,4 +48,8 @@ ShellRoot {
     // PC RGB control (fans + RAM colour/mode). Triggered via
     // `qs ipc call rgb toggle` (wired to Mod+Shift+R in niri). Drives pc-rgb.
     Overlays.RgbControl { }
+
+    // Screensaver trigger: 2.5 min idle (Quickshell's IdleMonitor) starts
+    // sanganak-screensaver, the next input ends it. Never locks.
+    Overlays.Screensaver { }
 }

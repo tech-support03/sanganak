@@ -8,12 +8,13 @@
 // (Theme.screenRadius).
 //
 // Clicking empty band space pins it on that monitor: it stays out and reserves
-// its width so windows move aside. A chevron at the top unpins, and Escape
-// unpins while the pointer is on the band. The band also stays out while one
-// of its panels is open (services/Panels.qml).
+// its width so windows move aside. A chevron at the very bottom, below the
+// power button, unpins, and Escape unpins while the pointer is on the band.
+// The band also stays out while one of its panels is open (services/Panels.qml).
 //
-// Sections, top to bottom: start (logo, workspaces), centre (indicators,
-// clock, weather, …), end (system, connectivity, power).
+// Sections, top to bottom: start (Arch logo, workspaces), centre (indicators,
+// clock, weather, …), end (background-service tray drawer, system, connectivity,
+// power), then the unpin chevron.
 import QtQuick
 import QtQuick.Shapes
 import Quickshell
@@ -119,8 +120,8 @@ Scope {
                         Item {
                             id: band
                             anchors { top: parent.top; bottom: parent.bottom; right: parent.right }
-                            anchors.topMargin: Theme.screenRadius + unpin.height
-                            anchors.bottomMargin: Theme.screenRadius
+                            anchors.topMargin: Theme.screenRadius
+                            anchors.bottomMargin: Theme.screenRadius + unpin.height
                             width: Theme.barSize
                             opacity: bar.reveal
 
@@ -153,6 +154,7 @@ Scope {
                                 anchors.bottom: parent.bottom
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 spacing: 2
+                                W.TrayDrawer { }
                                 W.SysMon { }
                                 W.Tray { }
                                 W.DisplayButton { }
@@ -165,11 +167,13 @@ Scope {
                             }
                         }
 
-                        // Unpin chevron, only while pinned.
+                        // Unpin chevron, only while pinned: the last slot, under
+                        // power. It grows in from the bottom and lifts the end
+                        // section with it.
                         Item {
                             id: unpin
                             anchors.right: parent.right
-                            y: Theme.screenRadius
+                            y: parent.height - Theme.screenRadius - height
                             width: Theme.barSize
                             height: bar.pinned ? Theme.barSlot : 0
                             clip: true
